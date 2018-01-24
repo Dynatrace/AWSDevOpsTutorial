@@ -832,7 +832,7 @@
                                 "Provider": "Manual"
                             },
                             "Configuration": {
-                                "CustomData": "RegisterDynatraceBuildValidation"
+                                "CustomData": ""
                             },
                             "RunOrder": 1
                         }]
