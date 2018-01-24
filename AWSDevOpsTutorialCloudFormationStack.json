@@ -21,7 +21,7 @@
         "KeyName": {
             "Description": "Name of Existing EC2 Key Pair which we will use to launch new EC2 Instances",
             "Type": "AWS::EC2::KeyPair::KeyName",
-            "ConstraintDescription": "Must be the name of an existing Key Pair",
+            "ConstraintDescription": "Must be the name of an existing Key Pair"
         },
         "InstanceType": {
             "Description": "Instance Types for the EC2 Instances we create for Staging and Production",
