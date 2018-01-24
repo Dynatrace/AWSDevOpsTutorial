@@ -72,10 +72,27 @@
                "Description": "Dynatrace API Token"
             }
         },
+        "SSMBuildReportURL": {
+            "Type": "AWS::SSM::Parameter",
+            "DependsOn" : ["DynatraceRestAPI"],
+            "Properties": {
+               "Name": "DT_BUILD_REPORT_URL",
+               "Type": "String",
+               "Value": {
+                "Fn::Join": ["", ["https://", {
+                    "Ref": "DynatraceRestAPI"
+                }, ".execute-api.", {
+                    "Ref": "AWS::Region"
+                }, ".amazonaws.com/v1/BuildValidationResults"]]                
+            },
+               "Description": "Dynatrace Build Report URL"
+            }
+        },
 
         "DynatraceLambdaRole": {
             "Type": "AWS::IAM::Role",
             "Properties": {
+                "RoleName" : "DynatraceLambdaRole",
                 "AssumeRolePolicyDocument": {
                     "Version": "2012-10-17",
                     "Statement": [{
@@ -101,6 +118,7 @@
         "DynatraceCodeDeployRole": {
             "Type": "AWS::IAM::Role",
             "Properties": {
+                "RoleName" : "DynatraceCodeDeployRole",
                 "AssumeRolePolicyDocument": {
                     "Version": "2012-10-17",
                     "Statement": [{
@@ -120,6 +138,7 @@
         "DynatraceCodePipelineRole": {
             "Type": "AWS::IAM::Role",
             "Properties": {
+                "RoleName" : "DynatraceCodePipelineRole", 
                 "AssumeRolePolicyDocument": {
                     "Version": "2012-10-17",
                     "Statement": [{
@@ -463,6 +482,23 @@
             }
         },
 
+        "HandleDynatraceProblemNotificationFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+                "FunctionName" : "handleDynatraceProblemNotification",
+                "Handler": "index.handler",
+                "Role": { "Fn::GetAtt": ["DynatraceLambdaRole", "Arn"] },
+                "Code": {
+                    "S3Bucket": { "Ref" : "YourS3BucketName" },
+                    "S3Key": "lambdas/handleDynatraceProblemNotification.zip"
+                },
+                "Runtime": "nodejs6.10",
+                "Timeout": "120",
+                "TracingConfig": {
+                    "Mode": "PassThrough"
+                 }
+            }
+        },
         "GetBuildValidationResultsFunction": {
             "Type": "AWS::Lambda::Function",
             "Properties": {
@@ -666,7 +702,7 @@
                                     "S3Bucket": {
                                         "Ref": "YourS3BucketName"
                                     },
-                                    "PollForSourceChanges": "true",
+                                    "PollForSourceChanges": "false",
                                     "S3ObjectKey": "app.zip"
                                 },
                                 "RunOrder": 1
@@ -686,7 +722,7 @@
                                     "S3Bucket": {
                                         "Ref": "YourS3BucketName"
                                     },
-                                    "PollForSourceChanges": "true",
+                                    "PollForSourceChanges": "false",
                                     "S3ObjectKey": "tests.zip"
                                 },
                                 "RunOrder": 1
@@ -899,7 +935,190 @@
                     }
                 }
             }
+        },
+
+
+
+        "LambdaInvokePermissionGetBuildValidationResultsFunction": {
+            "Type": "AWS::Lambda::Permission",
+            "DependsOn": ["GetBuildValidationResultsFunction", "BuildValidationResultsResource"],
+            "Properties": {
+                "FunctionName": {
+                    "Fn::GetAtt": [
+                        "GetBuildValidationResultsFunction",
+                        "Arn"
+                    ]
+                },
+                "Action": "lambda:InvokeFunction",
+                "Principal": "apigateway.amazonaws.com",
+                "SourceArn": {
+                    "Fn::Sub": "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${DynatraceRestAPI}/*/*/*"
+                }
+            }
+        },
+        "LambdaInvokePermissionHandleDynatraceProblemNotificationFunction": {
+            "Type": "AWS::Lambda::Permission",
+            "DependsOn": ["HandleDynatraceProblemNotificationFunction", "HandleDynatraceProblemResource"],
+            "Properties": {
+                "FunctionName": {
+                    "Fn::GetAtt": [
+                        "HandleDynatraceProblemNotificationFunction",
+                        "Arn"
+                    ]
+                },
+                "Action": "lambda:InvokeFunction",
+                "Principal": "apigateway.amazonaws.com",
+                "SourceArn": {
+                    "Fn::Sub": "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${DynatraceRestAPI}/*/*/*"
+                }
+            }
+        },        
+
+        "DynatraceRestAPI": {
+            "Type": "AWS::ApiGateway::RestApi",
+            "Properties": {
+                "Description": "Access to Dynatrace Data",
+                "Name": "Dynatrace DevOps Data API"
+            }
+        },
+
+        "BuildValidationResultsResource": {
+            "Type": "AWS::ApiGateway::Resource",
+            "Properties": {
+                "RestApiId": {
+                    "Ref": "DynatraceRestAPI"
+                },
+                "ParentId": {
+                    "Fn::GetAtt": ["DynatraceRestAPI", "RootResourceId"]
+                },
+                "PathPart": "BuildValidationResults"
+            }
+        },
+
+        "HandleDynatraceProblemResource": {
+            "Type": "AWS::ApiGateway::Resource",
+            "Properties": {
+                "RestApiId": {
+                    "Ref": "DynatraceRestAPI"
+                },
+                "ParentId": {
+                    "Fn::GetAtt": ["DynatraceRestAPI", "RootResourceId"]
+                },
+                "PathPart": "HandleDynatraceProblem"
+            }
+        },        
+
+        "BuildValidationResultsGET": {
+            "Type": "AWS::ApiGateway::Method",
+            "Properties": {
+                "ApiKeyRequired": "false",
+                "HttpMethod": "GET",
+                "ResourceId": {
+                    "Ref": "BuildValidationResultsResource"
+                },
+                "RestApiId": {
+                    "Ref": "DynatraceRestAPI"
+                },
+                "AuthorizationType": "NONE",
+                "OperationName": "Get Dynatrace Build Validation Results",
+
+                "Integration": {
+                    "Type": "AWS_PROXY",
+                    "PassthroughBehavior": "WHEN_NO_MATCH",
+
+                    "IntegrationHttpMethod": "POST",
+                    "Uri": {
+                        "Fn::Join": ["", ["arn:aws:apigateway:", {
+                            "Ref": "AWS::Region"
+                        }, ":lambda:path/2015-03-31/functions/", {
+                            "Fn::GetAtt": ["GetBuildValidationResultsFunction", "Arn"]
+                        }, "/invocations"]]
+                    },
+                    "IntegrationResponses": [{
+                        "StatusCode": 200
+                    }]
+                },
+                "MethodResponses": [{
+                    "ResponseModels": {
+                        "text/html": "Empty"
+                    },
+                    "StatusCode": 200
+                }]
+            }
+        },
+
+        "HandleDynatraceProblemPOST": {
+            "Type": "AWS::ApiGateway::Method",
+            "Properties": {
+                "ApiKeyRequired": "false",
+                "HttpMethod": "POST",
+                "ResourceId": {
+                    "Ref": "HandleDynatraceProblemResource"
+                },
+                "RestApiId": {
+                    "Ref": "DynatraceRestAPI"
+                },
+                "AuthorizationType": "NONE",
+                "OperationName": "Handles Dynatrace Problem Notification POST Requests",
+
+                "Integration": {
+                    "Type": "AWS_PROXY",
+                    "PassthroughBehavior": "WHEN_NO_MATCH",
+
+                    "IntegrationHttpMethod": "POST",
+                    "Uri": {
+                        "Fn::Join": ["", ["arn:aws:apigateway:", {
+                            "Ref": "AWS::Region"
+                        }, ":lambda:path/2015-03-31/functions/", {
+                            "Fn::GetAtt": ["HandleDynatraceProblemNotificationFunction", "Arn"]
+                        }, "/invocations"]]
+                    },
+                    "IntegrationResponses": [{
+                        "StatusCode": 200
+                    }]
+                },
+                "MethodResponses": [{
+                    "ResponseModels": {
+                        "text/html": "Empty"
+                    },
+                    "StatusCode": 200
+                }]
+            }
+        },        
+
+        "RestApiDeployment": {
+            "Type": "AWS::ApiGateway::Deployment",
+            "Properties": {
+                "RestApiId": {
+                    "Ref": "DynatraceRestAPI"
+                },
+                "StageName": "v1"
+            },
+            "DependsOn": ["BuildValidationResultsGET", "HandleDynatraceProblemPOST"]
+        },
+
+        "ScheduledRule": {
+            "Type": "AWS::Events::Rule",
+            "Properties": {
+                "Description": "Scan for pending Dynatrace Build Validation Requests",
+                "ScheduleExpression": "rate(2 minutes)",
+                "State": "ENABLED",
+                "Targets": [{
+                    "Arn": { "Fn::GetAtt": ["ValidateBuildDynatraceWorkerFunction", "Arn"] },
+                    "Id": "TargetFunctionV1"
+                }]
+            }
+        },
+        "PermissionForEventsToInvokeLambda": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+                "FunctionName": { "Ref": "ValidateBuildDynatraceWorkerFunction" },
+                "Action": "lambda:InvokeFunction",
+                "Principal": "events.amazonaws.com",
+                "SourceArn": { "Fn::GetAtt": ["ScheduledRule", "Arn"] }
+            }
         }
+
     },
 
     "Outputs": {
@@ -920,6 +1139,26 @@
                 "Fn::GetAtt": ["ProductionInstance", "PublicDnsName"]
             },
             "Description": "The Public DNS of your Production System"
+        },
+        "DynatraceBuildReportEndpoint": {
+            "Value": {
+                "Fn::Join": ["", ["https://", {
+                    "Ref": "DynatraceRestAPI"
+                }, ".execute-api.", {
+                    "Ref": "AWS::Region"
+                }, ".amazonaws.com/v1/BuildValidationResults"]]  
+            },
+            "Description": "URL to access the Build Validation Results"
+        },
+        "HandleDynatraceProblemEndpoint": {
+            "Value": {
+                "Fn::Join": ["", ["https://", {
+                    "Ref": "DynatraceRestAPI"
+                }, ".execute-api.", {
+                    "Ref": "AWS::Region"
+                }, ".amazonaws.com/v1/HandleDynatraceProblem"]]
+            },
+            "Description": "Endpoint for Integrating Dynatrace Problem Notifications"
         }
     }
 }

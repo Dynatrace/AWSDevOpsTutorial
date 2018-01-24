@@ -33,6 +33,15 @@ We need a couple of things to launch the CloudFormation Template
 3. A *Dynatrace API Token*: Go to Settings -> Integration -> Dynatrace API and create a new Token
 ![](./images/preparation_dynatraceapitoken.png)
 
+For Dynatrace to automatically distinguish between a Staging and a Production version of a Microservice we leverage what is called "Rule-Based Tagging". AWS CodeDeploy will pass on the Deployment Stage Name (Staging and Production) as an environment variable to the EC2 machine. Dynatrace will automatically pick up these environment variables but doesnt do anything with them unless we specify a rule that extracts this variable and applies it to the microservice monitoring entities. 
+Please go to *Settings -> Tags -> Automatically applied tags* and add a new rule as shown in the next screenshot:
+- Call the rule DeploymentGroup
+- Specify the rule for Services
+- In Optional Tag Value add: {ProcessGroup:Environment:DEPLOYMENT_GROUP_NAME}
+- You can leave the condidtion with the default values as you wont be able to select the condition shown in my screen until Dynatrace has seen that Environment variable. We can come back here later and add the condition!
+![](./images/preparation_dynatrace_servicetagging.png)
+
+
 ## Lets create the CloudFormation Stack
 If you haven't cloned or downloaded the full GitHub repo then download the CloudFormation stack definition from [here](./AWSDevOpsTutorialCloudFormationStack.json).
 
