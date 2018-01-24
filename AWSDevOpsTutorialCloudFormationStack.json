@@ -6,23 +6,22 @@
         "DynatraceTenantURL": {
             "Description": "Your full Dynatrace Tenant URL. For SaaS it is e.g: http://<YOURTENANTID>.live.dynatrace.com. For Managed something like https://yourserver/e/abcdefgh-1234-5678-abcd-55a7265f572f",
             "Type": "String",
-            "Default": "https://hci34192.live.dynatrace.com"
+            "Default": "YOURDYNATRACETENANTURL"
         },
         "DynatraceAPIToken": {
             "Description": "Your Dynatrace API Token. If you dont have one create one first in your Dynatrace Web UI via Settings -> Integration -> Dynatrace API",
             "Type": "String",
-            "Default": "I3TOYkkkTBGD-jRJ2dnUG"
+            "Default": "YOURTOKEN"
         },
         "DynatraceOneAgentURL": {
             "Description": "Full Download Script URL. Go to Deploy Dynatrace -> Start Installation -> Linux and cope the FULL URL in the wget command and PASTE it here",
             "Type": "String",
-            "Default": "https://hci34192.live.dynatrace.com/api/v1/deployment/installer/agent/unix/default/latest?Api-Token=ei2g3PgdQMCKLj8x-ZMml&arch=x86&flavor=default"
+            "Default": "YOURFULLDOWNLOADURL"
         },
         "KeyName": {
             "Description": "Name of Existing EC2 Key Pair which we will use to launch new EC2 Instances",
             "Type": "AWS::EC2::KeyPair::KeyName",
             "ConstraintDescription": "Must be the name of an existing Key Pair",
-            "Default": "MyKeyPair"
         },
         "InstanceType": {
             "Description": "Instance Types for the EC2 Instances we create for Staging and Production",
@@ -33,13 +32,7 @@
         "YourS3BucketName": {
             "Description": "The name of your S3 Bucket where you uploaded your Dynatrace AWS DevOps Tutorial Material. Suggested name is <yourname>-dynatracedevops",
             "Type": "String",
-            "Default": "agrabner-dynatracedevops"
-        },
-        "YourS3BucketRegion": {
-            "Description": "The region of your bucket",
-            "Type": "String",
-            "Default": "us-west-2",
-            "AllowedValues": ["us-east-1", "us-east-2", "us-west-1", "us-west-2"]
+            "Default": "<YOURNAME>-dynatracedevops"
         }
     },
 
