@@ -1,0 +1,28 @@
+version: 0.0
+os: linux
+files:
+  - source: index.html
+    destination: /home/ec2-user/
+  - source: app.js
+    destination: /home/ec2-user/
+  - source: package.json
+    destination: /home/ec2-user/
+permissions:
+  - object: /home/ec2-user/
+    mode: 777
+    type:
+      - file
+hooks:
+  BeforeInstall:
+    - location: scripts/stop_server.sh
+      timeout: 60
+      runas: root
+  ApplicationStart:
+    - location: scripts/start_server.sh
+      timeout: 60
+      runas: root
+  ApplicationStop:
+    - location: scripts/stop_server.sh
+      timeout: 60
+      runas: root
+

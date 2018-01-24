@@ -1,0 +1,23 @@
+version: 0.0
+os: linux
+files:
+  - source: loadtest.sh
+    destination: /home/ec2-user/
+permissions:
+  - object: /home/ec2-user/
+    mode: 777
+    type:
+      - file    
+hooks:
+  BeforeInstall:
+    - location: scripts/stop_loadtest.sh
+      timeout: 60
+      runas: root
+  ApplicationStart:
+    - location: scripts/start_loadtest.sh
+      timeout: 60
+      runas: root
+  ApplicationStop:
+    - location: scripts/stop_loadtest.sh
+      timeout: 60
+      runas: root      

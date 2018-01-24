@@ -1,0 +1,124 @@
+{
+    "SampleJSonService" : {
+        "etype": "SERVICE",
+        "_comment_etype" : "Options are SERVICE, APPLICATION, HOST, PROCESS_GROUP_INSTANCE",
+        "name": "SampleNodeJsService",
+        "_comment" : "This defines our initial thoughts about monitoring!",
+        "environments" : { 
+            "Staging" : {
+                "tags" : [
+                    {
+                        "context": "CONTEXTLESS",
+                        "key": "DeploymentGroup", 
+                        "value": "Staging"
+                    }                
+                ]
+            },
+            "Production" : {
+                "tags" : [
+                    {
+                        "context": "CONTEXTLESS",
+                        "key": "DeploymentGroup", 
+                        "value": "Production"
+                    }                
+                ]                
+            }
+        },
+        "_comment_environments" : "Allows you to define different environments and the ways dynatrace can identify the entities in that environment",
+        "comparisons" : [
+            { 
+                "name" : "StagingToProduction",
+                "source" : "Staging",
+                "compare" : "Production",
+                "scalefactorperc" : {
+                    "default": 10,
+                    "com.dynatrace.builtin:service.requestspermin" : 90
+                },
+                "shiftcomparetimeframe" : 0,
+                "shiftsourcetimeframe" : 0,
+
+                "_comment_name" : "Name of that comparison setting. Needs to be specified when using this file with our automation scripts",
+                "_comment_source" : "source entites. we compare timeseries from this entity with compare",
+                "_comment_compare": "compare entites. basically our baseline which we compare source against",
+                "_comment_scalefactorperc": "+/-(0-100)% number: if 10 it means that source can be 10% above/below than compare. you can define a default value but override it for individual measure, e.g: if Staging has 90% less traffic that prod you can define that here",
+                "_comment_shiftsourcetimeframe" : "allows you to define a shifted timeframe back to NOW(). Its in seconds, e.g: 600 means we compare against 10 minutes ago",
+                "_comment_shiftcomparetimeframe" : "allows you to define a shifted timeframe to NOW(). Its in seconds, e.g: 86400 means we compare against same time 1 day ago"
+            },
+            { 
+                "name" : "StagingToProductionYesterday",
+                "source" : "Staging",
+                "compare" : "Production",
+                "scalefactorperc" : {
+                    "default": 10,
+                    "com.dynatrace.builtin:service.requestspermin" : 90
+                },
+                "shiftsourcetimeframe" : 0,
+                "shiftcomparetimeframe" : 86400
+            },
+            { 
+                "name" : "StagingToStagingLastHour",
+                "source" : "Staging",
+                "compare" : "Staging",
+                "scalefactorperc" : { "default": 0},
+                "shiftsourcetimeframe" : 0,
+                "shiftcomparetimeframe" : 3600
+            },
+            { 
+                "name" : "ProductionToProductionLastHour",
+                "source" : "Production",
+                "compare" : "Production",
+                "scalefactorperc" : { "default": 0},
+                "shiftsourcetimeframe" : 0,
+                "shiftcomparetimeframe" : 3600
+            }  
+        ],
+        "_comment_comparisons" : "Allows you to define different comparison configurations which can be used to automate comparison between environments and timeframes",
+        "perfsignature" : [
+            { 
+                "timeseries" : "com.dynatrace.builtin:service.responsetime",
+                "aggregate" : "avg",
+                "validate" : "upper",
+                "_upperlimit" : 100,
+                "_lowerlimit" : 50,
+                "_comment_aggregate" : "Depending on the metric can be: min, max, avg, sum, median, count, percentile",
+                "_comment_validate" : "Defines whether we compare the upper or lower boundary of the calculated value bandwidth. Default is upper as for most metrics (response time, failure rate) we dont want the value to exceed our upper threshold",
+                "_comment_upperlimit" : "if specified we compare against this static threshold - otherwise against what is specified in comparison",
+                "_comment_lowerlimit" : "if specified, we compare against this static threshold - otherwise against what is specified in comparison"
+            },
+            { 
+                "timeseries" : "com.dynatrace.builtin:service.responsetime",
+                "aggregate" : "max"
+            },
+            { 
+                "timeseries" : "com.dynatrace.builtin:service.failurerate",
+                "aggregate" : "avg"
+            },
+            { 
+                "timeseries" : "com.dynatrace.builtin:service.requestspermin",
+                "aggregate" : "count",
+                "validate" : "lower"
+            }
+        ],
+        "_comment_perfsignature" : "this is the list of key metrics that make up your performance signature. we will then compare these metrics against the compare enviornment or a static threshold",
+        "servicemethods" : [
+            { 
+                "name" : "/api/invoke",
+                "perfsignature" : [
+                    { 
+                        "timeseries" : "com.dynatrace.builtin:servicemethod.responsetime",
+                        "aggregate" : "avg"
+                    },
+                    { 
+                        "timeseries" : "com.dynatrace.builtin:servicemethod.responsetime",
+                        "aggregate" : "max"
+                    },
+                    { 
+                        "timeseries" : "com.dynatrace.builtin:servicemethod.failurerate",
+                        "aggregate" : "avg"
+                    }
+                ]
+            }
+        ],
+        "_comment_servicemethods" : "Allows you to define key metrics of individual service methods and not just the service itself"
+    }
+}

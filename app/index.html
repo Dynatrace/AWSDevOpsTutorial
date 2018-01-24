@@ -1,0 +1,124 @@
+<html>
+  <head>
+    <title>Dynatrace AWS Tutorials: This is a Node.js App running on AWS - Monitored with Dynatrace OneAgent!</title>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+    <style>
+      body {color: #ffffff;font-family: Arial, sans-serif;font-size:14px;-moz-transition-property: text-shadow;-moz-transition-duration: 4s;-webkit-transition-property: text-shadow;-webkit-transition-duration: 4s;text-shadow: none;}
+      body.blurry {-moz-transition-property: text-shadow;-moz-transition-duration: 4s;-webkit-transition-property: text-shadow;-webkit-transition-duration: 4s;text-shadow: #fff 0px 0px 25px;}
+      a {color: #55aaff;}
+      .textColumn, .linksColumn {padding: 2em;}
+      .textColumn {
+	    /* background-color: #73A53E; */
+		  /*background-color: #EEA53E; */
+      background-color: BACKGROUND-COLOR;
+		
+        position: absolute;top: 0px;right: 50%;bottom: 0px;left: 0px;
+        text-align: right;padding-top: 11em;}
+      .textColumn p {width: 75%;float:right;}
+      .linksColumn {position: absolute;top:0px;right: 0px;bottom: 0px;left: 50%;background-color: #33342D;}
+      h1{color: #33342D;font-size: 500%;font-weight: normal;margin-bottom: 0em;}
+      h2{font-size: 200%;font-weight: normal;margin-bottom: 0em;}
+      ul {padding-left: 1em;margin: 0px;}
+      li {margin: 1em 0em;}
+    </style>
+  </head>
+  <body>
+    <div class="textColumn">
+      <h1>Congratulations (Build - BUILD_NUMBER)</h1>
+	  <img height="400px" src="https://github.com/Dynatrace/AWSMonitoringTutorials/raw/master/images/lab3_beanstalkloadbalanced.png" />
+      <p>This might be your first AWS Node.JS App you ever deployed.
+	  The code base of this application was taken from the AWS Elastic Beanstalk Tutorial but was modified for the Dynatrace AWS Tutorials that you can find <a href="https://github.com/Dynatrace/AWSMonitoringTutorials"/>here!</a> and <a href="https://github.com/Dynatrace/AWSDevOpsTutorial"/>here!</a>
+    The goal of these tutorials is to enable Full Stack Monitoring and build an Unbreakable DevOps Pipeline with Dynatrace for your Application. 
+    Following is a screenshot of Dynatrace Smartcape in case you deploy this application in a scalability group:
+	  If you want to learn more about Dynatrace visit our website and get started with your own <a href="http://bit.ly/dtsaastrial">Dynatrace SaaS Trial!</a>
+	  <br><br>
+	  This page is served from HOSTNAME!
+	  </p>
+    </div>
+    <div class="linksColumn">
+      <h2>Lets trace some code!</h2>
+	  <div style="padding:16px;">
+        Sleep Setting (in ms): <input type="textbox" id="SleepTime" value="1000"></input>
+      </div>
+
+	  <div style="padding:16px;">
+        Say Something : <input type="textbox" id="SayText" value="Just say whatever you want"></input>
+		<button id="Echo">Echo</button>
+      </div>
+
+	  <div style="padding:16px;">
+        Invoke Server Side URL (full URL please) : <input type="textbox" id="RemoteURL" value="https://www.amazon.com"></input>
+		<button id="Invoke">Invoke</button>
+      </div>
+
+	  <div style="padding:16px;" id="loginarea">
+	    Your Username (can be used for user tagging) : <input type="textbox" id="Username" value="Joe Mueller"></input>
+		<button id="Login">LOG ME IN :-)</button>
+      </div>
+	  	  
+	  <div style="padding:16px;">
+		<button id="Version">Get MyVersion!</button>
+      </div>
+	  
+	  <div>
+	    <p id="result">Results will show up here!</p>
+	  </div>
+	  
+	  <br>
+	  <br>
+      <h2>External Links: To learn more about Dynatrace</h2>
+      <ul>
+        <li><a href="https://www.dynatrace.com/technologies/cloud-and-microservices/aws-monitoring/">Dynatrace AWS Monitoring</a></li>
+        <li><a href="https://www.youtube.com/watch?v=CSf89W2iNJQ">5 Minute Live Demo from AWS Summit Sydney</a></li>
+        <li><a href="https://www.youtube.com/watch?v=R0bnDkM8k_o&list=PLqt2rd0eew1YFx9m8dBFSiGYSBcDuWG38&index=6&t=124s">101 AWS Monitoring with Dynatrace</a></li>
+      </ul>	  
+	  </div>
+	
+    <script>	
+	    function getRESTEndpoint() {
+		  return window.location.href;
+		}
+		
+	    function executeCall(requestString, sleep) {
+          var sleepTime = $('#SleepTime').val();	  
+	      var fullURL = getRESTEndpoint() + requestString;
+		  if(fullURL.indexOf("?") > 0) fullURL = fullURL + "&sleep=" + sleepTime;
+		  else fullURL = fullURL + "?sleep=" + sleepTime;
+		  
+	      $.ajax({
+            url: fullURL
+          }).success(function(data) {
+             $('#result').text(data);
+          }).fail(function() {
+             $('#result').text("invoke failed!");
+	      });
+	    }
+		
+		$("#Echo").click(function () {	
+          var text = $('#SayText').val();	
+		  executeCall("api/echo?text=" + text);
+        });
+
+		$("#Invoke").click(function () {	
+          var text = $('#RemoteURL').val();		
+		  executeCall("api/invoke?url=" + text);
+        });
+		
+		$("#Version").click(function () {	
+		  executeCall("api/version");
+        });
+
+		$("#Login").click(function () {	
+		  var username = $('#Username').val();	
+		  var loggedinusername = $("#loggedinusername");
+		  if(loggedinusername.length <= 0) {
+		    $("<div id=\"usrhelparea\">You are now Logged in as user: <p id=\"loggedinusername\">" + username + "</p></div>").appendTo("#loginarea")
+		  } else {
+		    loggedinusername.text(username);
+		  }
+		  executeCall("api/login?username=" + username);
+        });
+		
+	</script>	
+  </body>
+</html>
