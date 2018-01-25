@@ -9,7 +9,7 @@ The goal of this tutorial is having a full end-to-end AWS DevOps Pipeline (Stagi
 
 Before we launch the CloudFormation stack which will create all required resources (EC2 Instances, Lambdas, CodeDeploy, CodePipeline, API Gateway) lets make sure we have all pre-requisits covered!
 
-## Pre-Requisits
+## Pre-Requisites
 1. You need an AWS account. If you dont have one [get one here](https://aws.amazon.com/)
 2. You need a Dynatrace Account. Get your [Free SaaS Trial here!](http://bit.ly/dtsaastrial)
 3. You need to clone or copy the content of this GitHub repo to your local disk!
@@ -27,7 +27,7 @@ As we are going to use AWS CodeDeploy, AWS CodePipeline, AWS Lambda, DynamoDB, A
 
 **Dynatrace**
 We need a couple of things to launch the CloudFormation Template
-1. Your *Dynatrace Tenant URL*: For SaaS that would be something like http://<yourtenant>.live.dynatrace.com. For Managed it would be http://<yourserver>/e/<your-env-id>
+1. Your *Dynatrace Tenant URL*: For SaaS that would be something like `http://<yourtenant>.live.dynatrace.com`. For Managed it would be `http://<yourserver>/e/<your-env-id>`
 2. Your *Dynatrace OneAgent for Linux Download URL*: Go to Deploy Dynatrace -> Start Installation -> Linux and copy the URL within the quotes as shown below:
 ![](./images/preparation_dynatraceoneagenturl.png)
 3. A *Dynatrace API Token*: Go to Settings -> Integration -> Dynatrace API and create a new Token
