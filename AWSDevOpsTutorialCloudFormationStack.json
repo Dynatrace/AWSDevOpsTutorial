@@ -831,9 +831,6 @@
                                 "Version": "1",
                                 "Provider": "Manual"
                             },
-                            "Configuration": {
-                                "CustomData": ""
-                            },
                             "RunOrder": 1
                         }]
                     },
