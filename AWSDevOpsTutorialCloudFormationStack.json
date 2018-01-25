@@ -916,9 +916,6 @@
                                 "Version": "1",
                                 "Provider": "Manual"
                             },
-                            "Configuration": {
-                                "CustomData": "RegisterProductionValidation"
-                            },
                             "RunOrder": 1
                         }]
                     }
