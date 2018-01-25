@@ -192,7 +192,8 @@ export BUILD_NUMBER=1
 ```
 
 We can pass other build numbers. Supported values are 1, 2, 3 and 4. Any other value defaults to 1. Here is a quick overview of how each build behaves:
-Build # | Problem
+
+Build | Problem
 ------------ | -------------
 1 | no problem
 2 | 50% of requests return HTTP 500 Status Code
