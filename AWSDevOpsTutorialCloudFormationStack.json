@@ -1095,6 +1095,7 @@
             "Type": "AWS::Events::Rule",
             "Properties": {
                 "Description": "Scan for pending Dynatrace Build Validation Requests",
+                "Name" : "DynatraceBuildValidationWorkerRule",
                 "ScheduleExpression": "rate(2 minutes)",
                 "State": "ENABLED",
                 "Targets": [{
