@@ -1,0 +1,36 @@
+#!/bin/bash -x
+# First: we download and install the Dynatrace OneAgent - TODO: Make sure you download YOUR OneAgent for your Dynatrace Tenant
+yum update -y
+yum install ruby wget -y
+wget -O Dynatrace-OneAgent-Linux.sh "https://hci34192.live.dynatrace.com/api/v1/deployment/installer/agent/unix/default/latest?Api-Token=ei2g3PgdQMCKLj8x-ZMml&arch=x86&flavor=default"
+sudo /bin/sh Dynatrace-OneAgent-Linux.sh APP_LOG_CONTENT_ACCESS=1
+
+# Third: We install required components such as httpd, nodejs, pm2
+yum install -y httpd
+curl --silent --location https://rpm.nodesource.com/setup_6.x | bash -
+yum -y install nodejs
+npm install pm2@latest -g
+
+# Second: to make sure Dynatrace OneAgent immediately understand these env variable we set them here and execute a quick process for them to be picked up
+cd /home/ec2-user
+export DT_CUSTOM_PROP=DEPLOYMENT_ID=123456 DEPLOYMENT_GROUP_NAME=GROUP_NAME APPLICATION_NAME=APP_NAME
+echo "console.log('dummy app run');" >> testapp.js
+pm2 start testapp.js &> pm2start.log
+pm2 stop all &> pm2stop.log
+pm2 delete all &> pm2delete.log
+
+# Third: we Install the AWS CodeDeploy Agent
+REGION=$(curl 169.254.169.254/latest/meta-data/placement/availability-zone/ | sed 's/[a-z]$//')
+cd /home/ec2-user
+wget https://aws-codedeploy-$REGION.s3.amazonaws.com/latest/install
+chmod +x ./install
+./install auto
+
+# Last: Get the latest CloudFormation package
+yum update -y aws-cfn-bootstrap
+# Start cfn-init
+/opt/aws/bin/cfn-init -s ${AWS::StackId} -r ProductionInstance --region ${AWS::Region} || error_exit 'Failed to run cfn-init'
+# Start up the cfn-hup daemon to listen for changes to the EC2 instance metadata
+/opt/aws/bin/cfn-hup || error_exit 'Failed to start cfn-hup'
+# All done so signal success
+/opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackId} --resource StagingInstance --region ${AWS::Region}

@@ -33,16 +33,7 @@ We need a couple of things to launch the CloudFormation Template
 3. A *Dynatrace API Token*: Go to Settings -> Integration -> Dynatrace API and create a new Token
 ![](./images/preparation_dynatraceapitoken.png)
 
-Almost there: We need to execute one mandatory and one option configuration step!
-1. *Dynatrace Automatic Tag Rules*
-For Dynatrace to automatically distinguish between a Staging and a Production version of a Microservice we leverage what is called "Rule-Based Tagging". AWS CodeDeploy will pass on the Deployment Stage Name (Staging and Production) as an environment variable to the EC2 machine. Dynatrace will automatically pick up these environment variables but doesnt do anything with them unless we specify a rule that extracts this variable and applies it to the microservice monitoring entities. 
-Please go to *Settings -> Tags -> Automatically applied tags* and add a new rule as shown in the next screenshot:
-- Call the rule DeploymentGroup
-- Specify the rule for Services
-- In Optional Tag Value add: {ProcessGroup:Environment:DEPLOYMENT_GROUP_NAME}
-- You can leave the condidtion with the default values as you wont be able to select the condition shown in my screen until Dynatrace has seen that Environment variable. We can come back here later and add the condition!
-![](./images/preparation_dynatrace_servicetagging.png)
-2. (Optional) Setup AWS CloudWatch Monitoring
+**(optional)Setup Dynatrace AWS CloudWatch Monitoring)**
 Dynatrace has a built-in feature to pull in metrics and metadata (e.g: tags ) from CloudWatch. You can setup this integration as explained in the documentation: [How do I start Amazon Web Services monitoring?](https://www.dynatrace.com/support/help/cloud-platforms/amazon-web-services/how-do-i-start-amazon-web-services-monitoring/)
 
 
@@ -76,32 +67,67 @@ Region | Launch Template
 ![](./images/createstack_step4.png)
 
 ### Step 5: Once Done. Check outputs
+There is a lot of useful information here, e.g: the PublicDNS of the two EC2 Instances that got created and also the links to the Public API Gateway we created that allows us to execute some Lambda functions.
 ![](./images/createstack_step5.png)
 
 ## Lets explore what has been created
 Several things have been created.
 
-### CodePipeline
+### 2 EC2 Instances: Automatically monitored with Dynatrace
+
+The stack created two EC2 Instances. One for Staging, one that we use for Production. Go to your EC2 Section in the AWS Console and explore them:
+![](./images/createstack_ec2check1.png)
+
+These EC2 Instances launched with a special launch script that was passed in the UserData section of the EC2 Launch Configuration. This script installed requirement components such as the AWS CodeDeployAgent, Node.js, pm2 as well as the Dynatrace OneAgent.
+
+Lets move to Dynatrace and validate that these two EC2 machines are actually monitored. In your Dynatrace Web UI simply go to Hosts - you should see 2 new hosts. If you have the [Dynatrace AWS CloudWatch](https://www.dynatrace.com/support/help/cloud-platforms/amazon-web-services/how-do-i-start-amazon-web-services-monitoring/) integration setup the host name should reflect the actual names Staging and Production. Otherwise it will show up the unique EC2 Instance Name:
+![](./images/createstack_dynatracehostlist1.png)
+**Sanity Check:** If you dont see these two hosts it means something went wrong with the OneAgent installation. Most likely root cause is that you didnt use the correct OneAgent Download Link when creating the CloudFormation stack. In that case. Delete the stack and start all over. Double check that you really copy the correct *Download Link*, *Tenant URL* and *API Token*!
+
+When clicking on one of these hosts you can also see that Dynatrace alread does FullStack monitoring of that host. Depending on how far the CodePipeline (that also executed in the background) already executed you may or may not see some additional Node.js processes here. As long as you start seeing any data here you are good :-)
+![](./images/createstack_dynatracehost1.png)
+**Notice:** If you have the [Dynatrace AWS CloudWatch](https://www.dynatrace.com/support/help/cloud-platforms/amazon-web-services/how-do-i-start-amazon-web-services-monitoring/) integraton setup you will see all AWS Tags being pulled in automatically. Also expand the properties section and see what meta data we collect. This is good to know as Dynatrace can do A LOT with metadata, e.g: rule based tags, rule based naming, ...
+
+**ACTION: Configure Dynatrace Service Tag Rule for automatic Staging/Production detection**
+Before we move back to AWS we have to do one additonal configuration step in Dynatrace.
+While Dynatrace automatically identifies services based on service metadata, e.g: service name, technology, endpoints ... we can go a step further. If the same service (same name, technology, endpoints ...) is deployed into different environments (Staging, Production) we want Dynatrace to understand which services run in which environments.
+For Dynatrace to automatically distinguish between a Staging and a Production version of a Microservice we leverage what is called "Rule-Based Tagging". AWS CodeDeploy will pass the Deployment Stage Name (Staging and Production) as an environment variable to the EC2 machine. Dynatrace will automatically pick up these environment variables as additional meta data but doesnt do anything with them unless we specify a rule that extracts this variable and applies it to the microservice monitoring entities. 
+Please go to *Settings -> Tags -> Automatically applied tags* and add a new rule as shown in the next screenshot:
+- Call the rule DeploymentGroup
+- Specify the rule for Services
+- In Optional Tag Value add: {ProcessGroup:Environment:DEPLOYMENT_GROUP_NAME}
+- In the Condidition also specify that only those services should be tagged that contain that Environment Variable on the Process
+![](./images/preparation_dynatrace_servicetagging.png)
+
+
+### CodePipeline: Automatically Integrated with Dynatrace
 
 Go to AWS CodePipeline and validate that you see this new pipeline
 ![](./images/createstack_codepipeline1.png)
 
-Even though the Pipeline already executed we want to run it again. Click on "Release change" to run it again. This is due to some timing isuses when CodePipeline runs immediately after CloudFormation created it
+The Pipeline probably already executed as this happens automatically after CloudFormation created the Pipeline. The pipeline most likely failed at the "PushDynatraceDeploymentEvent" action. Thats OK and expected. If you click on details you will see that Dynatrace hasnt yet detected the Entities we try to push information to. Thats also OK and expected! It was missing the Service Tag Rule we just configured.
+
+**ACTION: Lets run the Pipeline again**
+As we finished the final configuration step on the Dynatrace side we are now ready to run the Pipeline again. Simply click on "Release change"
 ![](./images/createstack_codepipeline2.png)
 
-The Pipeline will deploy an application into staging, run some tests and already lets Dynatrace know about these deployments. It will also register a build validation run with Dynatrace (we will learn more about this later).
+*Pipeline Stages: Source and Staging*
+The Pipeline pulls code from S3 and uses AWS CodeDeploy to deploy an application into staging, launch a simple "load testing script" and will lets Dynatrace know about these deployments by sending a Deployment Event to the monitored Services (this is where the tag rule we just created comes in). 
+The Pipeline will also register a so called Dynatrace Build Validation run (we will learn more about this later).
 
-Let the pipeline run until it reaches the *Approve Staging* stage. For now we manually approve the Pipeline.
+*Pipeline Stage: Approve Staging*
+Let the pipeline run until it reaches the *Approve Staging* stage. For now we manually approve the Pipeline once it hits that point. This is a stage we will later automate!
 ![](./images/createstack_codepipeline3.png)
 
-The Pipeline will continue to deploy our application in Production, will run some tests (well - thats more like simulating real user load) and will also let Dynatrace know about that deployment.
+*Pipeline Stage: Production*
+Once we approve Staging the Pipeline continues to deploy our application in Production. It will launch another test script (well - we use this to simulate "real users") and will once again let Dynatrace know about that deployment by pushing an event on the monitored services that have the Production tag on it!
 
+*Pipeline Stage: Approve Production*
 The last step in the Pipeline is to approve that Production Deployment was good. This is again a manual process for now!
 
 ### Our Deployed Application
 
-As the Pipeline did its job we should be able to navigate to our deployed application in Staging and Production. You saw the Public DNS for our two server instances in the CloudFormation Output. If you dont remember either go back to the CloudFormation overview or navigate to your EC2 Instances. You will see both instances there and you can also get to the Public DNS and also Public IP.
-![](./images/createstack_ec2check1.png)
+If the Pipeline succeeded we should be able to navigate to our deployed application in Staging and Production. You saw the Public DNS for our two server instances in the *CloudFormation Output*. If you dont remember either go back to the CloudFormation overview or navigate to your EC2 Instances. You will see both instances there and you can also get to the Public DNS and also Public IP.
 
 If we take the public IP or public DNS we simply put it in a browser and navigate to default port 80. Lets see whether our app is up and running!
 ![](./images/createstack_appcheck1.png)
@@ -110,11 +136,7 @@ GRANTED - not the most beautiful looking app, but it does its job :-)
 
 ### Our Deployed Application in Dynatrace
 
-Behind the scenes a Dynatrace OneAgent was deployed on these EC2 Instances automatically starting to do FullStack monitoring of these instances. 
-
-*Host Monitoring*
-In your Dynatrace Web UI click on Hosts. You will see all hosts currently monitored. Click on one of them to get into the details. If you have also configured the [Dynatrace AWS CloudWatch Integration](https://www.dynatrace.com/support/help/cloud-platforms/amazon-web-services/how-do-i-start-amazon-web-services-monitoring/) you also see the tags configured in AWS on your EC2 instances as well as AWS CloudWatch Metrics.
-![](./images/createstack_dynatracehost1.png)
+Behind the scenes a Dynatrace OneAgent not only monitors our hosts (we verified that earlier), but does FullStack monitoring which includes EVERY process, service and application that gets deployed on these hosts!
 
 *Service Monitoring*
 When CodeDeploy deployed the app it also pushed some additonal environment variables to the Node.js process, telling Dynatrace more about the actual application and services. Here is part of the start_server.sh script that CodeDeploy executes. You see that we are leveraging our DT_TAGS, DT_CUSTOM_PROP and DT_CLUSTER_ID. If you want to learn more about tagging options start with this blog post: [Automate the tagging of entities with environment variables](https://www.dynatrace.com/blog/automate-tagging-entities-environment-variables/)
@@ -130,7 +152,8 @@ If you browse to your Dynatrace Web UI and then select Transaction & Services yo
 Lets click on the Staging Service and explore what Dynatrace sees within that service:
 ![](./images/createstack_dynatrace2.png)
 
-The longer you run the more historical data we have. But we already see Response Time, Failure Rate, Throughput. We see where the Node.js service runs on and we also get all the deployment information from the AWS CodePipeline. If you want to learn more about how to explore this data from here, e.g: see down to method level, exceptions, ... then check out our YouTube Dynatrace Performance Clinic on [Basic Diagnositcs with Dynatrace](https://www.youtube.com/watch?v=OEGk4JN9wDg&list=PLqt2rd0eew1YFx9m8dBFSiGYSBcDuWG38&index=2&t=810s)
+The longer you run your application and services the more historical data we have. But we already see Response Time, Failure Rate, Throughput. We see where the Node.js service runs on and we also get all the deployment information from the AWS CodePipeline. If you want to learn more about how to explore this data from here, e.g: see down to method level, exceptions, ... then check out our YouTube Dynatrace Performance Clinic on [Basic Diagnositcs with Dynatrace](https://www.youtube.com/watch?v=OEGk4JN9wDg&list=PLqt2rd0eew1YFx9m8dBFSiGYSBcDuWG38&index=2&t=810s)
+
 
 ## 2. Lets run another CodePipeline
 

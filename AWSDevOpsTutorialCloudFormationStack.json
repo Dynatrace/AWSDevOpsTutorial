@@ -343,28 +343,36 @@
                         "Fn::Join": ["", [
                             "#!/bin/bash -x\n",
                             "# First: we download and install the Dynatrace OneAgent - TODO: Make sure you download YOUR OneAgent for your Dynatrace Tenant\n",
+                            "yum update -y\n",
+                            "yum install ruby wget -y\n",
                             "wget -O Dynatrace-OneAgent-Linux.sh \"", {
                                 "Ref": "DynatraceOneAgentURL"
                             }, "\"\n",
                             "sudo /bin/sh Dynatrace-OneAgent-Linux.sh APP_LOG_CONTENT_ACCESS=1\n",
 
-                            "# Second: we Install the AWS CodeDeploy Agent\n",
+                            "# Second: We install required components such as httpd, nodejs, pm2\n",
+                            "yum install -y httpd\n",
+                            "curl --silent --location https://rpm.nodesource.com/setup_6.x | bash -\n",
+                            "yum -y install nodejs\n",
+                            "npm install pm2@latest -g\n",
+
+                            "# Third: to make sure Dynatrace OneAgent immediately understand these env variable we set them here and execute a quick process for them to be picked up",
+                            "cd /home/ec2-user\n",
+                            "export DT_CUSTOM_PROP=DEPLOYMENT_ID=123456 DEPLOYMENT_GROUP_NAME=GROUP_NAME APPLICATION_NAME=APP_NAME",
+                            "echo \"console.log('dummy app run');\" >> testapp.js",
+                            "pm2 start testapp.js &> pm2start.log",
+                            "pm2 stop all &> pm2stop.log",
+                            "pm2 delete all &> pm2delete.log",
+
+                            "# Third: we Install the AWS CodeDeploy Agent\n",
                             "REGION=$(curl 169.254.169.254/latest/meta-data/placement/availability-zone/ | sed 's/[a-z]$//')\n",
-                            "yum update -y\n",
-                            "yum install ruby wget -y\n",
                             "cd /home/ec2-user\n",
                             "wget https://aws-codedeploy-", {
                                 "Ref": "AWS::Region"
                             }, ".s3.amazonaws.com/latest/install\n",
                             "chmod +x ./install\n",
                             "./install auto\n",
-
-                            "# Third: We install required components such as httpd, nodejs, pm2\n",
-                            "yum install -y httpd\n",
-                            "curl --silent --location https://rpm.nodesource.com/setup_6.x | bash -\n",
-                            "yum -y install nodejs\n",
-                            "npm install pm2@latest -g\n",
-
+                            
                             "# Last: Get the latest CloudFormation package",
                             "yum update -y aws-cfn-bootstrap",
                             "# Start cfn-init",
