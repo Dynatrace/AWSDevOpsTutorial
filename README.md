@@ -181,7 +181,8 @@ In our AWS CodePipeline you may have noticed an action called *RegisterDynatrace
 
 *registerDynatraceBuildValidation*: This AWS Lambda is actually not doing a whole lot. It is simply putting a "Build Validation Request" in a DynamoDB table with all the information needed to process the request once the timespan, e.g: 5 minutes has passed. If you want go ahead and explorer your DynamoDB table called *BuildValidationRequests*:
 ![](./images/buildvalidation_dynamodbtable1.png)
-The key data points in that table are: PipelineName, ComparisonName, Timestamp, Validationtimeframe and Status. In my screenshot you can see that 4 build validation requests have already been validated and they all showed a Violation, meaning: the automated metrics comparison between the two specified environments showed a degradation in performance. I have one entry in there in status waiting. Waiting means that it is not yet time as the timeframe, e.g: 5 minutes since the request was put into this table has not yet passed!
+The key data points in that table are: PipelineName, ComparisonName, Timestamp, Validationtimeframe and Status. In my screenshot you can see that 4 build validation requests. 1 is still waiting for validation. Two are in status OK and one shows status Violation! Violation means that the automated metrics comparison between the two specified environments showed a degradation in performance. 
+As for status waiting: Waiting means that it is not yet time as the timeframe, e.g: 5 minutes since the request was put into this table has not yet passed!
 
 *validateBuildDynatraceWorker*: This AWS Lambda is doing all the heavy lifting. It gets triggered via a CloudWatch Rule that calls this function every 2 minutes. The function checks the DynamoDB table and processes those entries that are in status "Waiting" and where "the time is right". The function then looks at the monspec file which contains the definition of environments, comparison configurations as well as metrics. Based on that configuration data the function uses the Dynatrace Timeseries API and pulls in the metrics from the entities and compares them. The result gets put back onto the DynamoDB Item. The monspec column contains all values from the source and the comparison source as well as status information for every compared metric and an overall status. The overall status is also reflected in the Status column.
 ![](./images/buildvalidation_cloudwatchrule1.png)
@@ -209,8 +210,15 @@ In order to automatically validate the Production Approval Stage we simply do th
 ![](./images/buildvalidation_automateproductionapproval.png)
 
 THATS IT!!! - From now on our pipeline approvals will automatically be accepted or rejected based on Dynatrace Build Validation Results. We can always manually approve these actions BEFORE Dynatrace gets to - but - well - whats the point in automating then? :-)
-In case Dynatrace Accepts or Rejects the Approval Stage you will find details about it on the Action itself. In case it fails the details also include the link to your report. Here is an example:
-![](./images/buildvalidation_approvaldetails.png)
+In case Dynatrace Accepts or Rejects the Approval Stage you will find details about it on the Action itself. You also find a link to the report that gives you the historical overview.
+
+Approval Example | Reject Example
+![](./images/buildvalidation_approvaldetails.png) | ![](./images/buildvalidation_rejectdetails.png)
+
+Here is the build validation overview report showing how it looks like when one of the build didnt validate successful. Seems in my case the max response time is above the allowed threshold:
+![](./images/buildvalidation_htmlreport2.png)
+
+**TIP**: If Dynatrace rejects a build but you still want to push it into the next stage simply "Retry" that approval stage and then manually approve it!
 
 ### Deploy a "bad" version into Staging
 
