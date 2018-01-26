@@ -31,7 +31,7 @@
                 "source" : "Staging",
                 "compare" : "Production",
                 "scalefactorperc" : {
-                    "default": 10,
+                    "default": 15,
                     "com.dynatrace.builtin:service.requestspermin" : 90
                 },
                 "shiftcomparetimeframe" : 0,
@@ -49,7 +49,7 @@
                 "source" : "Staging",
                 "compare" : "Production",
                 "scalefactorperc" : {
-                    "default": 10,
+                    "default": 15,
                     "com.dynatrace.builtin:service.requestspermin" : 90
                 },
                 "shiftsourcetimeframe" : 0,
@@ -59,7 +59,7 @@
                 "name" : "StagingToStagingLastHour",
                 "source" : "Staging",
                 "compare" : "Staging",
-                "scalefactorperc" : { "default": 0},
+                "scalefactorperc" : { "default": 10},
                 "shiftsourcetimeframe" : 0,
                 "shiftcomparetimeframe" : 3600
             },
@@ -67,7 +67,7 @@
                 "name" : "ProductionToProductionLastHour",
                 "source" : "Production",
                 "compare" : "Production",
-                "scalefactorperc" : { "default": 0},
+                "scalefactorperc" : { "default": 10},
                 "shiftsourcetimeframe" : 0,
                 "shiftcomparetimeframe" : 3600
             }  

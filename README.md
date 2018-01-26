@@ -297,6 +297,101 @@ Here is how I configured my name rule:
 
 This will result in better to understand service names as the name will include the Deployment Group (Staging Production) as well as the default detected name. In our case we will therefore get services with the names: Production/SampleNodeJsService and Staging/SampleNodeJsService
 
+### Monspec - Monitoring as Code Configuration
+
+One aspect we havent discussed in more detail is the actual configuration that tells our lambda functions which Dynatrace Entities to query, which metrics and timeframes to compare. This configuration is all stored in "monspec.json". A json file that our Pipeline defines as an Input Artifact. The idea behind this configuration file is that a developer of a service can define the following things
+1. How to identify that service in the different environments
+2. How to compare that service between environments
+3. Which metrics to compare and whether it is a 1:1 comparison or whether a special baseline factor should be applied
+
+Check out the monspec file that is part of this tutorial. We added some comments to the fields to explain what these fields are!
+
+Here are several snippets of this monspec file that should explain how it works:
+*** 1: Defining how to identify this entity in the different environments leveraging Dynatrace Tags ***
+```
+"SampleJSonService" : {
+    "etype": "SERVICE",  // Allowed are SERVICE, APPLICATION, HOST, PROCESS_GROUP_INSTANCE
+    "environments" : { 
+        "Staging" : {    // This service in Staging is identified through the DeploymentGroup:Staging Tag
+            "tags" : [
+                {
+                    "context": "CONTEXTLESS",
+                    "key": "DeploymentGroup", 
+                    "value": "Staging"
+                }                
+            ]
+        },
+        "Production" : { // This service in Production is identified through the DeploymentGroup:Production Tag
+            "tags" : [
+                {
+                    "context": "CONTEXTLESS",
+                    "key": "DeploymentGroup", 
+                    "value": "Production"
+                }                
+            ]                
+        }
+    },
+```
+*** 2: Defining different comparision options, e.g: Staging with Prod, Staging with Staging Yesterday, ... ***
+```
+"comparisons" : [
+    { 
+        "name" : "StagingToProduction",   // Compare Staging with Production
+        "source" : "Staging",
+        "compare" : "Production",
+        "scalefactorperc" : {             
+            "default": 15,                // Allow Staging Values to be 15% OFF on average than Production
+            "com.dynatrace.builtin:service.requestspermin" : 90  // Except requestpermin. Here Staging can be 90& OFF, e.g: when Staging only executes a fraction of the load frrom prod
+        },
+        "shiftcomparetimeframe" : 0,
+        "shiftsourcetimeframe" : 0,
+    },
+    { 
+        "name" : "StagingToProductionYesterday",
+        "source" : "Staging",
+        "compare" : "Production",
+        "scalefactorperc" : {
+            "default": 15,
+            "com.dynatrace.builtin:service.requestspermin" : 90
+        },
+        "shiftsourcetimeframe" : 0,
+        "shiftcomparetimeframe" : 86400   // Timeshift allows us to compare different timeframes
+    },
+    { 
+        "name" : "StagingToStagingLastHour",  // we can also compare the same environments - just a differnt timeframe. Good for Continuous Performance Environments
+        "source" : "Staging",
+        "compare" : "Staging",
+        "scalefactorperc" : { "default": 10},
+        "shiftsourcetimeframe" : 0,
+        "shiftcomparetimeframe" : 3600
+    } 
+```
+
+*** 3. Define our Performance Signatures: Which Metrics to Compare using a Static or Dynamic Threshold ***
+```
+"perfsignature" : [
+    {   // We want to compare AVG Response Time and make sure the upper limit doesnt cross the Comparison Source (including the ScaleFactor bandwidth)
+        "timeseries" : "com.dynatrace.builtin:service.responsetime",
+        "aggregate" : "avg",
+        "validate" : "upper",
+        "_upperlimit" : 100,  // Optionally you can define hard coded limits
+        "_lowerlimit" : 50,
+    },
+    { 
+        "timeseries" : "com.dynatrace.builtin:service.responsetime",
+        "aggregate" : "max"
+    },
+    { 
+        "timeseries" : "com.dynatrace.builtin:service.failurerate",
+        "aggregate" : "avg"
+    },
+    { 
+        "timeseries" : "com.dynatrace.builtin:service.requestspermin",
+        "aggregate" : "count",  // for aggregation we allow min, max, avg, sum, count and median
+        "validate" : "lower" // validate defines whether we validate upper or lower boundaries!
+    }
+]
+```
 
 ## 6. Summary - Next Steps
 I hope you enjoyed that tutorial and you saw the value of adding Dynatrace into your DevOps Pipeline. We discussed a couple of concepts on how to leverage the Automation API, Automated Tagging and Baselining to implement concepts such as Shift-Left and Self-Healing.
