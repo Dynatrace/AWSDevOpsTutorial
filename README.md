@@ -44,9 +44,9 @@ Now click on one of the regional links. This brings you to the CloudFormation We
 
 Region | Launch Template
 ------------ | -------------
+**Oregon** (us-west-2) | <a href="https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=dynatracedevopsstack" target="blank">Launch Dynatrace DevOps Stack into Oregon</a>
 **N. Virginia** (us-east-1) | <a href="https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=dynatracedevopsstack" target="_blank">Launch Dynatrace DevOps Stack into Virginia</a>
 **Ohio** (us-east-2) | <a href="https://console.aws.amazon.com/cloudformation/home?region=us-east-2#/stacks/new?stackName=dynatracedevopsstack" target="blank">Launch Dynatrace DevOps Stack into Ohio</a>
-**Oregon** (us-west-2) | <a href="https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=dynatracedevopsstack" target="blank">Launch Dynatrace DevOps Stack into Oregon</a>
 **Ireland** (eu-west-1) | <a href="https://console.aws.amazon.com/cloudformation/home?region=eu-west-1#/stacks/new?stackName=dynatracedevopsstack" target="blank">Launch Dynatrace DevOps Stack into Ireland</a>
 **Frankfurt** (eu-central-1) | <a href="https://console.aws.amazon.com/cloudformation/home?region=us-central-1#/stacks/new?stackName=dynatracedevopsstack" target="blank">Launch Dynatrace DevOps Stack into Frankfurt</a>
 **Tokyo** (ap-northeast-1) | <a href="https://console.aws.amazon.com/cloudformation/home?region=ap-northeast-1#/stacks/new?stackName=dynatracedevopsstack" target="blank">Launch Dynatrace DevOps Stack into Tokyo</a>
@@ -88,27 +88,30 @@ When clicking on one of these hosts you can also see that Dynatrace alread does 
 ![](./images/createstack_dynatracehost1.png)
 **Notice:** If you have the [Dynatrace AWS CloudWatch](https://www.dynatrace.com/support/help/cloud-platforms/amazon-web-services/how-do-i-start-amazon-web-services-monitoring/) integraton setup you will see all AWS Tags being pulled in automatically. Also expand the properties section and see what meta data we collect. This is good to know as Dynatrace can do A LOT with metadata, e.g: rule based tags, rule based naming, ...
 
-**ACTION: Configure Dynatrace Service Tag Rule for automatic Staging/Production detection**
-Before we move back to AWS we have to do one additonal configuration step in Dynatrace.
-While Dynatrace automatically identifies services based on service metadata, e.g: service name, technology, endpoints ... we can go a step further. If the same service (same name, technology, endpoints ...) is deployed into different environments (Staging, Production) we want Dynatrace to understand which services run in which environments.
-For Dynatrace to automatically distinguish between a Staging and a Production version of a Microservice we leverage what is called "Rule-Based Tagging". AWS CodeDeploy will pass the Deployment Stage Name (Staging and Production) as an environment variable to the EC2 machine. Dynatrace will automatically pick up these environment variables as additional meta data but doesnt do anything with them unless we specify a rule that extracts this variable and applies it to the microservice monitoring entities. 
-Please go to *Settings -> Tags -> Automatically applied tags* and add a new rule as shown in the next screenshot:
-- Call the rule DeploymentGroup
-- Specify the rule for Services
-- In Optional Tag Value add: {ProcessGroup:Environment:DEPLOYMENT_GROUP_NAME}
-- In the Condidition also specify that only those services should be tagged that contain that Environment Variable on the Process
-![](./images/preparation_dynatrace_servicetagging.png)
-
-
 ### CodePipeline: Automatically Integrated with Dynatrace
 
 Go to AWS CodePipeline and validate that you see this new pipeline
 ![](./images/createstack_codepipeline1.png)
 
-The Pipeline probably already executed as this happens automatically after CloudFormation created the Pipeline. The pipeline most likely failed at the "PushDynatraceDeploymentEvent" action. Thats OK and expected. If you click on details you will see that Dynatrace hasnt yet detected the Entities we try to push information to. Thats also OK and expected! It was missing the Service Tag Rule we just configured.
+**First Pipeline Run will FAIL :-(**
+The Pipeline probably already executed as this happens automatically after CloudFormation created the Pipeline. The pipeline most likely failed at the "PushDynatraceDeploymentEvent" action. Thats OK and expected. If you click on details you will see that Dynatrace hasn't yet detected the Entities we try to push information to. This is a missing configuration step on the Dynatrace side.
+![](./images/createstack_codepipeline1_failed.png)
+
+**Action: Configure Proper Dynatrace Service Tagging to detect Staging vs Production Services**
+While Dynatrace automatically identifies services based on service metadata, e.g: service name, technology, endpoints ... we can go a step further. 
+If the same service (same name, technology, endpoints ...) is deployed into different environments (Staging, Production) we want Dynatrace to understand which services run in which environments and put a Tag on it. Exactly the tag that our pipeline is expecting so that we can push and pull information for the each services based on which environment it is in!
+For Dynatrace to automatically distinguish between a Staging and a Production version of a Microservice we leverage what is called "Rule-Based Tagging". AWS CodeDeploy will pass the Deployment Stage Name (Staging and Production) as an environment variable to the EC2 machine. Dynatrace will automatically pick up these environment variables as additional meta data but doesnt do anything with them unless we specify a rule that extracts this variable and applies it to the microservice monitoring entities. 
+Please go to *Settings -> Tags -> Automatically applied tags* and add a new rule as shown in the next screenshot:
+- Call the new Tag *DeploymentGroup*
+- Edit that Tag and add a new rule that applies for *Services*
+- In Optional Tag Value add: {ProcessGroup:Environment:DEPLOYMENT_GROUP_NAME}
+- In the Condidition also specify that only those services should be tagged where the *Process Group Environment Variable DEPLOYMENT_GROUP_NAME exists*
+- You can click on Preview to see which Services it matches. It should already match our Staging Service!
+- Click SAVE!
+![](./images/preparation_dynatrace_servicetagging.png)
 
 **ACTION: Lets run the Pipeline again**
-As we finished the final configuration step on the Dynatrace side we are now ready to run the Pipeline again. Simply click on "Release change"
+As the Dynatrace configuration for automated Service Tagging is now done, we simply run the pipeline again. Lets click on "Release change"
 ![](./images/createstack_codepipeline2.png)
 
 *Pipeline Stages: Source and Staging*
