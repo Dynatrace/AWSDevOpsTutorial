@@ -454,12 +454,18 @@
             "Properties": {
                 "TableName": "BuildValidationRequests",
                 "AttributeDefinitions": [{
-                    "AttributeName": "RequestID",
+                    "AttributeName": "PipelineName",
+                    "AttributeType": "S"
+                }, {
+                    "AttributeName": "Timestamp",
                     "AttributeType": "N"
                 }],
                 "KeySchema": [{
                     "KeyType": "HASH",
-                    "AttributeName": "RequestID"
+                    "AttributeName": "PipelineName"
+                },{
+                    "KeyType": "RANGE",
+                    "AttributeName": "Timestamp"
                 }],
                 "ProvisionedThroughput": {
                     "ReadCapacityUnits": 10,
