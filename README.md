@@ -15,7 +15,9 @@ Before we launch the CloudFormation stack which will create all required resourc
 3. You need to clone or copy the content of this GitHub repo to your local disk!
 
 ## Preparation
-**Amazon**
+
+**Amazon Web Services (AWS)**
+
 As we are going to use AWS CodeDeploy, AWS CodePipeline, AWS Lambda, DynamoDB, API Gateway and EC2 make sure the AWS Region you select provides all these services. We have tested this cloud formation on US-West-2a (Oregon) and US-East-2b (Ohio). To be on the safe side we suggest you pick one of these regions!
 
 1. Create an EC2 Key Pair for your AWS Region! Our CloudFormation Template needs an EC2 Key Pair!
@@ -26,6 +28,7 @@ As we are going to use AWS CodeDeploy, AWS CodePipeline, AWS Lambda, DynamoDB, A
 ![](./images/preparation_copytos3.png)
 
 **Dynatrace**
+
 We need a couple of things to launch the CloudFormation Template
 1. Your *Dynatrace Tenant URL*: For SaaS that would be something like http://<yourtenant>.live.dynatrace.com. For Managed it would be http://<yourserver>/e/<your-env-id>
 2. Your *Dynatrace OneAgent for Linux Download URL*: Go to Deploy Dynatrace -> Start Installation -> Linux and copy the URL within the quotes as shown below:
@@ -34,6 +37,7 @@ We need a couple of things to launch the CloudFormation Template
 ![](./images/preparation_dynatraceapitoken.png)
 
 **(optional)Setup Dynatrace AWS CloudWatch Monitoring)**
+
 Dynatrace has a built-in feature to pull in metrics and metadata (e.g: tags ) from CloudWatch. You can setup this integration as explained in the documentation: [How do I start Amazon Web Services monitoring?](https://www.dynatrace.com/support/help/cloud-platforms/amazon-web-services/how-do-i-start-amazon-web-services-monitoring/)
 
 
@@ -82,11 +86,13 @@ These EC2 Instances launched with a special launch script that was passed in the
 
 Lets move to Dynatrace and validate that these two EC2 machines are actually monitored. In your Dynatrace Web UI simply go to Hosts - you should see 2 new hosts. If you have the [Dynatrace AWS CloudWatch](https://www.dynatrace.com/support/help/cloud-platforms/amazon-web-services/how-do-i-start-amazon-web-services-monitoring/) integration setup the host name should reflect the actual names Staging and Production. Otherwise it will show up the unique EC2 Instance Name:
 ![](./images/createstack_dynatracehostlist1.png)
-**Sanity Check:** If you dont see these two hosts it means something went wrong with the OneAgent installation. Most likely root cause is that you didnt use the correct OneAgent Download Link when creating the CloudFormation stack. In that case. Delete the stack and start all over. Double check that you really copy the correct *Download Link*, *Tenant URL* and *API Token*!
+**Sanity Check:** 
+If you dont see these two hosts it means something went wrong with the OneAgent installation. Most likely root cause is that you didnt use the correct OneAgent Download Link when creating the CloudFormation stack. In that case. Delete the stack and start all over. Double check that you really copy the correct *Download Link*, *Tenant URL* and *API Token*!
 
 When clicking on one of these hosts you can also see that Dynatrace alread does FullStack monitoring of that host. Depending on how far the CodePipeline (that also executed in the background) already executed you may or may not see some additional Node.js processes here. As long as you start seeing any data here you are good :-)
 ![](./images/createstack_dynatracehost1.png)
-**Notice:** If you have the [Dynatrace AWS CloudWatch](https://www.dynatrace.com/support/help/cloud-platforms/amazon-web-services/how-do-i-start-amazon-web-services-monitoring/) integraton setup you will see all AWS Tags being pulled in automatically. Also expand the properties section and see what meta data we collect. This is good to know as Dynatrace can do A LOT with metadata, e.g: rule based tags, rule based naming, ...
+**Notice:** 
+If you have the [Dynatrace AWS CloudWatch](https://www.dynatrace.com/support/help/cloud-platforms/amazon-web-services/how-do-i-start-amazon-web-services-monitoring/) integraton setup you will see all AWS Tags being pulled in automatically. Also expand the properties section and see what meta data we collect. This is good to know as Dynatrace can do A LOT with metadata, e.g: rule based tags, rule based naming, ...
 
 ### CodePipeline: Automatically Integrated with Dynatrace
 
@@ -94,10 +100,12 @@ Go to AWS CodePipeline and validate that you see this new pipeline
 ![](./images/createstack_codepipeline1.png)
 
 **First Pipeline Run will FAIL :-(**
+
 The Pipeline probably already executed as this happens automatically after CloudFormation created the Pipeline. The pipeline most likely failed at the "PushDynatraceDeploymentEvent" action. Thats OK and expected. If you click on details you will see that Dynatrace hasn't yet detected the Entities we try to push information to. This is a missing configuration step on the Dynatrace side.
 ![](./images/createstack_codepipeline1_failed.png)
 
 **Action: Configure Proper Dynatrace Service Tagging to detect Staging vs Production Services**
+
 While Dynatrace automatically identifies services based on service metadata, e.g: service name, technology, endpoints ... we can go a step further. 
 If the same service (same name, technology, endpoints ...) is deployed into different environments (Staging, Production) we want Dynatrace to understand which services run in which environments and put a Tag on it. Exactly the tag that our pipeline is expecting so that we can push and pull information for the each services based on which environment it is in!
 For Dynatrace to automatically distinguish between a Staging and a Production version of a Microservice we leverage what is called "Rule-Based Tagging". AWS CodeDeploy will pass the Deployment Stage Name (Staging and Production) as an environment variable to the EC2 machine. Dynatrace will automatically pick up these environment variables as additional meta data but doesnt do anything with them unless we specify a rule that extracts this variable and applies it to the microservice monitoring entities. 
@@ -111,6 +119,7 @@ Please go to *Settings -> Tags -> Automatically applied tags* and add a new rule
 ![](./images/preparation_dynatrace_servicetagging.png)
 
 **ACTION: Lets run the Pipeline again**
+
 As the Dynatrace configuration for automated Service Tagging is now done, we simply run the pipeline again. Lets click on "Release change"
 ![](./images/createstack_codepipeline2.png)
 
@@ -238,7 +247,9 @@ Build | Problem
 4 | no problem in staging but problem in prod -> higher sleep time and 10% of requests fail
 
 Here are my suggestions for your next steps:
-1. Try Build 2 and see whether the automated approval for Staging actually rejects the build. It should becuase 50% of requests fail which means that Failure Rate should show a violation as compared to Production.
+1. Try Build 2 and see whether the automated approval for Staging actually rejects the build. It should becuase 50% of requests fail which means that Failure Rate should show a violation as compared to Production. Here is my report output nicely showing the spike in Failure Rate which is why my build was violated!
+![](./images/buildvalidation_htmlreport_build2.png)
+
 2. Then try Build 3. Everything should be good again and the pipeline should make it all the way to Production
 3. Now we can try Build 4. It should make it through Staging as the problem only affects Production Deployments. But we should see Production Approval to fail!
 4. Lets go back to Build 1
