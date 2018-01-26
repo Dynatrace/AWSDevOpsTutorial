@@ -267,4 +267,24 @@ If you want to learn more about Self-Healing and Auto-Remediation I suggest you 
 * [YouTube Self-Healing Demo with our Lab Team: Auto-Scaling and Restarting Sevices](https://www.youtube.com/watch?v=0zlCxVEf8pk&list=PLqt2rd0eew1YFx9m8dBFSiGYSBcDuWG38&index=18)
 * [Blog: Top Problems Detected and how to Auto-Mitigate them](https://www.dynatrace.com/blog/applying-dynatrace-ai-into-our-digital-performance-life-best-of-december-2017/)
 
+## 5. Optional Steps
+
+There are a couple of additional things we can do to make this even better
+
+### Automated Service Naming Rules
+
+While Dynatrace automatically detects our services and gives them a proper name we end up having the same service name multiple timese - one per environment. In order to get better default naming we can create a so called "Service naming rule". In the Dynatrace Web UI go to Settings -> Service naming rules and create a new custom rule just as I have done here:
+![](./images/servicenaming_ruleconfig1.png)
+
+Here is how I configured my name rule:
+*Name*: Services by Deployment Group Name
+*Name Format*: {ProcessGroup:Environment:DEPLOYMENT_GROUP_NAME}/{Service:DetectedName}
+*Condition*: DEPLOYMENT_GROUP_NAME(Environment)
+
+This will result in better to understand service names as the name will include the Deployment Group (Staging Production) as well as the default detected name. In our case we will therefore get services with the names: Production/SampleNodeJsService and Staging/SampleNodeJsService
+
+
+## 6. Summary - Next Steps
+I hope you enjoyed that tutorial and you saw the value of adding Dynatrace into your DevOps Pipeline. We discussed a couple of concepts on how to leverage the Automation API, Automated Tagging and Baselining to implement concepts such as Shift-Left and Self-Healing.
+There is more that can be done. If you want to learn more check out my YouTube Channel on [Dyntrace FullStack Performance Clinics](http://bit.ly/oneagenttutorials)
 If you have any further questions dont hesitate to ask!
