@@ -152,11 +152,14 @@ export DT_CLUSTER_ID="$DEPLOYMENT_GROUP_NAME $APPLICATION_NAME"
 If you browse to your Dynatrace Web UI and then select Transaction & Services you will see the two detected services with their correct names and also the environment they run in (Staging or Production)
 ![](./images/createstack_dynatrace1.png)
 
-Lets click on the Staging Service and explore what Dynatrace sees within that service:
+Lets click on the Service in Staging and explore what Dynatrace sees within that service:
 ![](./images/createstack_dynatrace2.png)
 
-The longer you run your application and services the more historical data we have. But we already see Response Time, Failure Rate, Throughput. We see where the Node.js service runs on and we also get all the deployment information from the AWS CodePipeline. If you want to learn more about how to explore this data from here, e.g: see down to method level, exceptions, ... then check out our YouTube Dynatrace Performance Clinic on [Basic Diagnositcs with Dynatrace](https://www.youtube.com/watch?v=OEGk4JN9wDg&list=PLqt2rd0eew1YFx9m8dBFSiGYSBcDuWG38&index=2&t=810s)
+You will notice that the service has our DeploymentGroup:Staging tag applied. That came in through the rule we defined earlier. The name "Staging" comes from an environment variable that is applied to the underlying process.
+We also start seeing performance metrics such as Response Time, Failure Rate, Throughput, CPU. The longer our service runs the more data we get.
+Also check out the events section. If you expand it you will find the deployment information from our AWS CodePipeline. This information comes in from a Lambda function that gets called. It is the function that failed in the beginning because the tags were not yet applied. Hope all this now makes sense :-)
 
+If you want to learn more about how to explore this data from here, e.g: see down to method level, exceptions, ... then check out our YouTube Dynatrace Performance Clinic on [Basic Diagnositcs with Dynatrace](https://www.youtube.com/watch?v=OEGk4JN9wDg&list=PLqt2rd0eew1YFx9m8dBFSiGYSBcDuWG38&index=2&t=810s)
 
 ## 2. Lets run another CodePipeline
 
