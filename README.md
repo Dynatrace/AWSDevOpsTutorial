@@ -312,6 +312,34 @@ Here is how I configured my name rule:
 
 This will result in better to understand service names as the name will include the Deployment Group (Staging Production) as well as the default detected name. In our case we will therefore get services with the names: Production/SampleNodeJsService and Staging/SampleNodeJsService
 
+### Log Rule Events - Detect Critical Log Messages
+
+Dynatrace OneAgent automatically monitors all important log files. Dynatrace automatically detects critical or severe log messages written to these files but we can also define our own custom Log Monitoring Rules which will then automatically create an event on the Entity (Process, Host) that creates that log message.
+Our application is mainly logging informational entries, e.g: when another 100 requests are processed. But there are two important log messages the app is writing in case somebody
+1. Forces a critical error by invoking the url /api/causeerror
+2. Changes the build number by invoking the url /api/buildnumber?newBuildNumber=X
+
+In the first case the app logs a SEVERE log message. In the latter it logs a WARNING. We can see these log messages by opening up the log file. 
+In Dynatrace Web UI open the Service Details view for your Staging or Production Service. Now navigate to the NodeJS process that actually runs that service. You should see a screenshot like this and you should find the section about monitored log files:
+![](./images/logmonitoring_processgroupoverview.png)
+
+Click on the serviceoutput.log entry which brings you to the Log Monitoring Feature. Click on "Display Log" and you will see all the log messages that came in in the selected timeframe:
+![](./images/logmonitoring_displaylogpng.png)
+
+If you dont see the error log yet go back to your browser and execute the /api/causeerror on your staging or production instance. Then refresh that log view until you see the log entry coming in.
+
+The Log viewer also allows us to define a filter, e.g: lets filter on "sombody called /api/causerror". You can actually click in the bottom log entry view and the UI will give you an option to start defining these filters based on real log entries. This is what you should see then:
+![](./images/logmonitoring_filterlog.png)
+
+If we have a filter that we are really interested in we can go a step further. We can click on "Define event" which brings us to our Custom Log Event configuration - already pre-populated with our pattern. What we want to do here is to give it a name, select generate "Log Error Problem" and change the occurences to higher than 0 per min. That will force Dynatrace to immediately open a Problem Ticket if one of these error logs is detected. If we want Dynatrace to not only monitor the Staging or Production system but actually both you can adjust the log file filter on the bottom of the screen. Here you can select all log files that Dynatrace should monitor for that log pattern:
+![](./images/logmonitoring_definelogeventrule.png)
+
+Click save. Now go back to your app and start executing another /api/causeerror. What will happen now is that Dynatrace detects that a log entry matches our filter and it will then automatically open a Problem Ticket. Here is how it looks like in my environment!
+![](./images/logmonitoring_logproblemdetected.png)
+
+Now - creating a Problem Ticket for every time we see this log message might not be what you want. But you see now what is possible. Instead of opening a ticket Dynatrace can also just create an Event on the entity. Similar to our Deployment Event when CodePipelins pushes a Deployment out - we can have Dynatrace create an event based on observed log messages!
+
+
 ### Monspec - Monitoring as Code Configuration
 
 One aspect we havent discussed in more detail is the actual configuration that tells our lambda functions which Dynatrace Entities to query, which metrics and timeframes to compare. This configuration is all stored in "monspec.json". A json file that our Pipeline defines as an Input Artifact. The idea behind this configuration file is that a developer of a service can define the following things

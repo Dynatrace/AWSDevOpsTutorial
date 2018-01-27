@@ -202,7 +202,10 @@ var server = http.createServer(function (req, res) {
 		}
 		if(url.pathname === "/api/version") {
 			if (url.query["newBuildNumber"] && url.query["newBuildNumber"] != null) {
-				init(url.query["newBuildNumber"]);
+				var newBuildNumber = url.query["newBuildNumber"];
+				log(SEVERITY_WARNING, "Somebody is changing! buildNumber from " + buildNumber + " to " + newBuildNumber);
+
+				init(newBuildNumber);
 			}
 
 			// usage: /api/version
