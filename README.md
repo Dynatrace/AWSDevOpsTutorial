@@ -1,11 +1,13 @@
 # AWSDevOpsTutorial
 Unbreakable DevOps Pipeline Tutorial with AWS CodeDeploy, AWS CodePipeline, AWS Lambda, EC2 and Dynatrace.
 
-The goal of this tutorial is having a full end-to-end AWS DevOps Pipeline (Staging, Approval, Production) that is fully monitored with Dynatrace. With Dynatrace injected into the pipeline you get the following features
-1. Monitor your Staging Environment
-2. Automate Approve/Reject Promotion from Staging to Production based on Performance Data
-3. Monitor your Production Environment
-4. Automatic Deploy of previous revision in case Dynatrace detected problems in Production
+The goal of this tutorial is having a full end-to-end AWS DevOps Pipeline (Staging, Approval, Production) that is fully monitored with Dynatrace. With Dynatrace injected into the pipeline we implement the following use cases:
+1. **FullStack** Monitor your **Staging** Environment
+2. **Shift-Left**: Automate Approve/Reject Promotion from Staging to Production based on Performance Data captured while running continuous performance tests
+3. **FullStack** Monitor your **Production** Environment
+4. **Self-Healing**: Automatic Deploy of previous revision in case Dynatrace detected problems in Production
+
+You can also [download the slides](./PERFORM2018_HOTDAY_PM_GRABNER_UnbreakablePipeline.pptx) we used at our Dynatrace PERFORM 2018 HOT (Hands On Training) Day. The slides contain more background information and more detailed steps!
 
 Before we launch the CloudFormation stack which will create all required resources (EC2 Instances, Lambdas, CodeDeploy, CodePipeline, API Gateway) lets make sure we have all pre-requisits covered!
 
@@ -82,7 +84,25 @@ Several things have been created.
 The stack created two EC2 Instances. One for Staging, one that we use for Production. Go to your EC2 Section in the AWS Console and explore them:
 ![](./images/createstack_ec2check1.png)
 
-These EC2 Instances launched with a special launch script that was passed in the UserData section of the EC2 Launch Configuration. This script installed requirement components such as the AWS CodeDeployAgent, Node.js, pm2 as well as the Dynatrace OneAgent.
+These EC2 Instances launched with a special launch script that was passed in the UserData section of the EC2 Launch Configuration. This script installed requirement components such as the AWS CodeDeployAgent, Node.js, pm2 as well as the Dynatrace OneAgent. Here is a simplified version of that UserData script:
+```
+#1: Install Dynatrace OneAgent
+yum update -y
+yum install ruby wget -y
+wget -O Dynatrace-OneAgent-Linux.sh "{{DynatraceOneAgentURL}}
+sudo /bin/sh Dynatrace-OneAgent-Linux.sh APP_LOG_CONTENT_ACCESS=1
+
+#2: Install Depending Software, e.g: httpd, nodejs, pm2
+...
+
+#3: Launch dummy PM2 App to pass Env Variables to OneAgent -> Trick to get Vars into Web UI
+export DT_CUSTOM_PROP=DEPLOYMENT_GROUP_NAME=GROUP_NAME APPLICATION_NAME=APP_NAME
+echo "console.log('dummy app run');" >> testapp.js
+pm2 start testapp.js &> pm2start.log
+
+#4: Install AWS CodeDeploy Agent and run CFN Update
+...
+```
 
 Lets move to Dynatrace and validate that these two EC2 machines are actually monitored. In your Dynatrace Web UI simply go to Hosts - you should see 2 new hosts. If you have the [Dynatrace AWS CloudWatch](https://www.dynatrace.com/support/help/cloud-platforms/amazon-web-services/how-do-i-start-amazon-web-services-monitoring/) integration setup the host name should reflect the actual names Staging and Production. Otherwise it will show up the unique EC2 Instance Name:
 ![](./images/createstack_dynatracehostlist1.png)
@@ -109,6 +129,10 @@ The Pipeline probably already executed as this happens automatically after Cloud
 While Dynatrace automatically identifies services based on service metadata, e.g: service name, technology, endpoints ... we can go a step further. 
 If the same service (same name, technology, endpoints ...) is deployed into different environments (Staging, Production) we want Dynatrace to understand which services run in which environments and put a Tag on it. Exactly the tag that our pipeline is expecting so that we can push and pull information for the each services based on which environment it is in!
 For Dynatrace to automatically distinguish between a Staging and a Production version of a Microservice we leverage what is called "Rule-Based Tagging". AWS CodeDeploy will pass the Deployment Stage Name (Staging and Production) as an environment variable to the EC2 machine. Dynatrace will automatically pick up these environment variables as additional meta data but doesnt do anything with them unless we specify a rule that extracts this variable and applies it to the microservice monitoring entities. 
+Here is a short explainer what actually happens when AWS CodeDeploy deploys the app:
+![](./images/awscodedeploy_dttags_explained.png)
+
+What we want is that Dynatrace extracts some of this meta data on that process and apply it as Tags on the Service. To do this: 
 Please go to *Settings -> Tags -> Automatically applied tags* and add a new rule as shown in the next screenshot:
 - Call the new Tag *DeploymentGroup*
 - Edit that Tag and add a new rule that applies for *Services*
