@@ -367,8 +367,8 @@ exports.checkPerfSigEntryViolation = function(entityDef, perfSigEntry, compariso
         
         // if we dont have a compare value we use our source value
         if(!perfSigEntry.hasOwnProperty("actualCompareValue")) {
-            returnValue = false;
-            console.log("Couldnt find compare value - therefore cant compare and default to validation failed!")
+            returnValue = true;
+            console.log("Couldnt find compare value - therefore cant compare and default to validation succeeded!")
         }
         else {
             var actualCompareValue = perfSigEntry.actualCompareValue;
