@@ -221,6 +221,7 @@ var postToApi = function(postedData, codePipelineJobId, context) {
                 var responseObject = JSON.parse(response);
                 if(responseObject.error && responseObject.error.message.includes("No MEIdentifier do match")) {
                     reportError("Failed to push Dynatrace Deployment Event!\nNO Entities found that match your Tags: + " + JSON.stringify(postedData.attachRules) + "\n\nDouble check your tag configuration in monspec or in Dynatrace!", codePipelineJobId, context)
+                    return;
                 }
             }
         }

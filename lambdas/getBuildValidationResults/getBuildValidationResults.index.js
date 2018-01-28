@@ -108,7 +108,7 @@ exports.handler = (event, context, callback) => {
             var response = {
                 statusCode: responseCode,
                 headers : { "content-type" : "text/html" },
-                body: htmlreport.buildHtmlChartReport(null, "SampleDevOpsPipeline", "StagingToProduction")
+                body: htmlreport.buildHtmlChartReport(null, null, "SampleDevOpsPipeline", "StagingToProduction")
             };
             
             console.log("Response Body: " + response.body);

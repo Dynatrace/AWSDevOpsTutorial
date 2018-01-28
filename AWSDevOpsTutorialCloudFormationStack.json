@@ -342,7 +342,7 @@
                     "Fn::Base64": {
                         "Fn::Join": ["", [
                             "#!/bin/bash -x\n",
-                            "# First: we download and install the Dynatrace OneAgent - TODO: Make sure you download YOUR OneAgent for your Dynatrace Tenant\n",
+                            "# First: we download and install the Dynatrace OneAgent\n",
                             "yum update -y\n",
                             "yum install ruby wget -y\n",
                             "wget -O Dynatrace-OneAgent-Linux.sh \"", {
@@ -457,7 +457,7 @@
             }
         },
 
-        "MessagesDynamoDBTable": {
+        "BuildValidationRequestsDynamoDBTable": {
             "Type": "AWS::DynamoDB::Table",
             "Properties": {
                 "TableName": "BuildValidationRequests",
