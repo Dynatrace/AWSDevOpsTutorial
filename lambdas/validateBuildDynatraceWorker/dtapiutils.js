@@ -65,7 +65,12 @@ exports.dtApiInit = function(callback) {
         getSystemParameter('DT_TENANT_URL', dtTenantUrl, function(err, data) {
             if(err) {callback(err, null); return};
             dtTenantUrl = data;
-            callback(null, "OK");
+
+            getSystemParameter('DT_BUILD_REPORT_URL', dtBuildReportUrl, function(err, data) {
+                if(err) {callback(err, null); return};
+                dtBuildReportUrl = data;
+                callback(null, "OK");
+            });
         });
     });
 }

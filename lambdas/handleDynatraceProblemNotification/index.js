@@ -135,7 +135,7 @@ var deployPreviousRevisions = function(mostRecentEventsWithDeployData, index, ca
     deployEventWithDeployData.CodeDeployResponse = "Created new Deployment: ";
     callback(null, mostRecentEventsWithDeployData);
     
-    /* codedeploy.createDeployment(params, function(err, data) {
+    codedeploy.createDeployment(params, function(err, data) {
         if(err) {
             deployEventWithDeployData.CodeDeployResponse = err;
             console.log("createDeployment failed: " + err);
@@ -151,7 +151,7 @@ var deployPreviousRevisions = function(mostRecentEventsWithDeployData, index, ca
         } else {
             callback(null, mostRecentEventsWithDeployData);
         }
-    });*/
+    });
 }
 
 /**
