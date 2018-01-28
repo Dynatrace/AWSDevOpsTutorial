@@ -1,8 +1,8 @@
 #!/bin/bash -x
-# First: we download and install the Dynatrace OneAgent - TODO: Make sure you download YOUR OneAgent for your Dynatrace Tenant
+# First: we download and install the Dynatrace OneAgent
 yum update -y
 yum install ruby wget -y
-wget -O Dynatrace-OneAgent-Linux.sh "https://hci34192.live.dynatrace.com/api/v1/deployment/installer/agent/unix/default/latest?Api-Token=ei2g3PgdQMCKLj8x-ZMml&arch=x86&flavor=default"
+wget -O Dynatrace-OneAgent-Linux.sh "{{DynatraceOneAgentURL}}
 sudo /bin/sh Dynatrace-OneAgent-Linux.sh APP_LOG_CONTENT_ACCESS=1
 
 # Second: We install required components such as httpd, nodejs, pm2

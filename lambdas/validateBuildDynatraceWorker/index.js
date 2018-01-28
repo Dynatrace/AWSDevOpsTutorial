@@ -188,6 +188,9 @@ var calculateAverageOnDataPoints = function(dataPoints) {
     
     if (returnValue.totalEntries > 0) {
         returnValue.totalAvg = returnValue.totalSum / returnValue.totalEntries;
+    } else {
+        returnValue.totalAvg = null;
+        returnValue.totalSum = null;
     }
     return returnValue;
 }
