@@ -80,14 +80,14 @@
                 "validate" : "upper",
                 "_upperlimit" : 100,
                 "_lowerlimit" : 50,
-                "_comment_aggregate" : "Depending on the metric can be: min, max, avg, sum, median, count, percentile",
+                "_comment_aggregate" : "Depending on the metric can be: min, max, avg, sum, median, count, pXX (=XX th percentile) ",
                 "_comment_validate" : "Defines whether we compare the upper or lower boundary of the calculated value bandwidth. Default is upper as for most metrics (response time, failure rate) we dont want the value to exceed our upper threshold",
                 "_comment_upperlimit" : "if specified we compare against this static threshold - otherwise against what is specified in comparison",
                 "_comment_lowerlimit" : "if specified, we compare against this static threshold - otherwise against what is specified in comparison"
             },
             { 
                 "timeseries" : "com.dynatrace.builtin:service.responsetime",
-                "aggregate" : "max"
+                "aggregate" : "p90"
             },
             { 
                 "timeseries" : "com.dynatrace.builtin:service.failurerate",
@@ -110,7 +110,7 @@
                     },
                     { 
                         "timeseries" : "com.dynatrace.builtin:servicemethod.responsetime",
-                        "aggregate" : "max"
+                        "aggregate" : "p90"
                     },
                     { 
                         "timeseries" : "com.dynatrace.builtin:servicemethod.failurerate",

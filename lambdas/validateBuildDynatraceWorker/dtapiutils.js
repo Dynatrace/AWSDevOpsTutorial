@@ -191,7 +191,14 @@ exports.getTimeseries = function(tsId, entities, timefrom, timeto, querymode, ag
     if(timefrom) postBody.startTimestamp = timefrom;
     if(timeto) postBody.endTimestamp = timeto;
     if(querymode) postBody.queryMode = querymode;
-    if(aggregation) postBody.aggregationType = aggregation;
+    if(aggregation) {
+        if(aggregation.startsWith("p")) {
+            postBody.aggregationType = "percentile";
+            postBody.percentile = aggregation.substr(1);
+        } else {
+            postBody.aggregationType = aggregation;
+        }
+    }
     
     // Lets call the timeseries API
     exports.dtApiPost(exports.getDtTenantUrl() + "/api/v1/timeseries", exports.getDtApiToken(), postBody, function(statusCode, data) {
