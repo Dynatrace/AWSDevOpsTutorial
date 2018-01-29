@@ -52,7 +52,7 @@
                     "default": 15,
                     "com.dynatrace.builtin:service.requestspermin" : 90
                 },
-                "shiftsourcetimeframe" : 0,
+                "shiftsourcetimeframe" : 60,
                 "shiftcomparetimeframe" : 86400
             },
             { 
@@ -60,15 +60,15 @@
                 "source" : "Staging",
                 "compare" : "Staging",
                 "scalefactorperc" : { "default": 10},
-                "shiftsourcetimeframe" : 0,
+                "shiftsourcetimeframe" : 60,
                 "shiftcomparetimeframe" : 3600
             },
             { 
                 "name" : "ProductionToProductionLastHour",
                 "source" : "Production",
                 "compare" : "Production",
-                "scalefactorperc" : { "default": 10},
-                "shiftsourcetimeframe" : 0,
+                "scalefactorperc" : { "default": 10, "com.dynatrace.builtin:service.requestspermin" : 30},
+                "shiftsourcetimeframe" : 60,
                 "shiftcomparetimeframe" : 3600
             }  
         ],

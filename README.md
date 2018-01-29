@@ -7,7 +7,7 @@ The goal of this tutorial is having a full end-to-end AWS DevOps Pipeline (Stagi
 3. **FullStack** Monitor your **Production** Environment
 4. **Self-Healing**: Automatic Deploy of previous revision in case Dynatrace detected problems in Production
 
-You can also [download the slides](./PERFORM2018_HOTDAY_PM_GRABNER_UnbreakablePipeline.pptx) we used at our Dynatrace PERFORM 2018 HOT (Hands On Training) Day. The slides contain more background information and more detailed steps!
+You can also [download the slides](https://github.com/Dynatrace/AWSDevOpsTutorial/blob/master/PERFORM2018_HOTDAY_PM_GRABNER_UnbreakablePipeline.PPTX?raw=true) we used at our Dynatrace PERFORM 2018 HOT (Hands On Training) Day. The slides contain more background information and more detailed steps!
 
 Before we launch the CloudFormation stack which will create all required resources (EC2 Instances, Lambdas, CodeDeploy, CodePipeline, API Gateway) lets make sure we have all pre-requisits covered!
 
