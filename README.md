@@ -152,14 +152,14 @@ The Pipeline pulls code from S3 and uses AWS CodeDeploy to deploy an application
 The Pipeline will also register a so called Dynatrace Build Validation run (we will learn more about this later).
 
 *Pipeline Stage: Approve Staging*
-Let the pipeline run until it reaches the *Approve Staging* stage. For now we manually approve the Pipeline once it hits that point. This is a stage we will later automate!
+Let the pipeline run until it reaches the *Approve Staging* stage. After 5 Minutes Dynatrace will validate the build and then either approve or reject the build depending on real time performance data. If you dont want to wait you can always approve or reject manually!
 ![](./images/createstack_codepipeline3.png)
 
 *Pipeline Stage: Production*
-Once we approve Staging the Pipeline continues to deploy our application in Production. It will launch another test script (well - we use this to simulate "real users") and will once again let Dynatrace know about that deployment by pushing an event on the monitored services that have the Production tag on it!
+Once Staging is approved the Pipeline continues to deploy our application in Production. It will launch another test script (well - we use this to simulate "real users") and will once again let Dynatrace know about that deployment by pushing an event on the monitored services that have the Production tag on it!
 
 *Pipeline Stage: Approve Production*
-The last step in the Pipeline is to approve that Production Deployment was good. This is again a manual process for now!
+The last step in the Pipeline is to approve that Production Deployment was good. Just as for Staging, this step will automatically be approved or rejected by Dynatrace after 5 minutes. If you don't want to wait you can approve/reject manually! 
 
 ### Our Deployed Application
 
@@ -210,14 +210,15 @@ In a "non automated" world the approver of a build would go off to all sorts of 
 
 **BUT THAT IS A BORING TASK!! A TASK THAT CAN BE AUTOMATED!!**
 
-In our AWS CodePipeline you may have noticed an action called *RegisterDynatraceBuildValidation*. This action triggers the Lambda function *registerDynatraceBuildValidation* with the parameters: StagingToProduction,5. These parameters tell our Lambda function to that we want to compare key metrics from Staging vs Production. It also tells it that we dont want to do it right away but start in 5 minutes. Reason for that is because we first want to give the load test the chance to generate some load.
+In our AWS CodePipeline you may have noticed an action called *RegisterStagingValidation*. This action triggers the Lambda function *registerDynatraceBuildValidation* with the parameters: *StagingToProduction,5,ApproveStaging*. These parameters tell our Lambda function that we want to compare key metrics from Staging vs Production. It also tells it that we dont want to do it right away but start in 5 minutes. Reason for that is because we first want to give the load test the chance to generate some load. And once the validation happened it should Approve or Reject the Approval Action with the name *ApproveStaging*!
 
 *registerDynatraceBuildValidation*: This AWS Lambda is actually not doing a whole lot. It is simply putting a "Build Validation Request" in a DynamoDB table with all the information needed to process the request once the timespan, e.g: 5 minutes has passed. If you want go ahead and explorer your DynamoDB table called *BuildValidationRequests*:
 ![](./images/buildvalidation_dynamodbtable1.png)
-The key data points in that table are: PipelineName, ComparisonName, Timestamp, Validationtimeframe and Status. In my screenshot you can see that 4 build validation requests. 1 is still waiting for validation. Two are in status OK and one shows status Violation! Violation means that the automated metrics comparison between the two specified environments showed a degradation in performance. 
+The key data points in that table are: PipelineName, ComparisonName, ApprovalAction, Timestamp, Validationtimeframe and Status. In my screenshot you can see 4 different build validation requests. 1 is still waiting for validation. Two are in status OK and one shows status Violation! Violation means that the automated metrics comparison between the two specified environments showed a degradation in performance. 
 As for status waiting: Waiting means that it is not yet time as the timeframe, e.g: 5 minutes since the request was put into this table has not yet passed!
 
-*validateBuildDynatraceWorker*: This AWS Lambda is doing all the heavy lifting. It gets triggered via a CloudWatch Rule that calls this function every 2 minutes. The function checks the DynamoDB table and processes those entries that are in status "Waiting" and where "the time is right". The function then looks at the monspec file which contains the definition of environments, comparison configurations as well as metrics. Based on that configuration data the function uses the Dynatrace Timeseries API and pulls in the metrics from the entities and compares them. The result gets put back onto the DynamoDB Item. The monspec column contains all values from the source and the comparison source as well as status information for every compared metric and an overall status. The overall status is also reflected in the Status column.
+*validateBuildDynatraceWorker*: This AWS Lambda is doing all the heavy lifting. It gets triggered via a CloudWatch Rule that calls this function every 2 minutes (that can of course be changed). The function checks the DynamoDB table and processes those entries that are in status "Waiting" and where "The Time is Right". The function then looks at the monspec file which contains the definition of environments, comparison configurations as well as metrics. Based on that configuration data the function uses the Dynatrace Timeseries API and pulls in the metrics from the matching entities and compares them. The result gets put back into the DynamoDB database. The monspec column contains all values from the source and the comparison source as well as status information for every compared metric and an overall status. The overall status is also reflected in the Status column.
+In case we have configured an ApprovalAction this Lambda function approves or rejects that action in case the action is still pending approval. In case you manually approved/rejected it no action is done!
 ![](./images/buildvalidation_cloudwatchrule1.png)
 
 So - one way to look at the data would be to go back to the DynamoDB table and manually look at the Monspec column. **BUT - THAT IS ALSO BORING AND A MANUAL TASK!!**
@@ -229,26 +230,14 @@ Go ahead and open it - the report gives you a list of metrics and for every buil
 
 Alright. So - we now have automated performance data from our Staging Enviornment that gets automatically compared to our Production environment every time we run a build. We have all this data in DynamoDB and accessible as an HTML report.
 
-## 3. Lets automate the Approval Stage through Dynatrace
+## 3. More details about Automated Approvals
 
-Now lets automate the approval of the "Manual Approval" action in our CodePipeline. Our Lambda function *validateBuildDynatraceWorker* which gets executed via the CloudWatch Rule is not only validating the results and writing it back to DynamoDB. It also checks whether the Pipeline that initiated that build validation request is currently waiting for Manual Approval. If that is the case, and if that Manual Approval WANTS *validateBuildDynatraceWorker* to approve/reject that phase then the Lambda function will do that as well.
-The only configuration we have to do is to mark the "Manual Approval" so that our Lambda functions knows it can approve/reject it. This is done via the Comment field. Here our Lambda function expects the CodePipeline Action Name that initiated the build validation request. In our case that is *RegisterDynatraceBuildValidation*. 
-Do do this lets edit our AWS CodePipeline and edit the ManualApproval action in the ApproveStaging stage of our Pipeline: RegisterDynatraceBuildValidation
-![](./images/buildvalidation_automatestagingapproval.png)
-
-We can do the same for the Production Approval Stage as we also have a Build Validation Request right after we deploy production. That request validates Production with Production from an hour ago - making sure that nothing that was deployed is worse than before. Here is the configuration of the RegisterProductionValidation action right after we deployed the application in Production. It puts a Build Validation Request into our DynamoDB table to validate Production with ProductionLastHour, 5 minutes into the Production Deployment!
-![](./images/buildvalidation_production_registerbuildvalidation1.png)
-
-In order to automatically validate the Production Approval Stage we simply do the same thing we did for our Staging approval. We put *RegisterProductionValidation* into the Comments field:
-![](./images/buildvalidation_automateproductionapproval.png)
-
-THATS IT!!! - From now on our pipeline approvals will automatically be accepted or rejected based on Dynatrace Build Validation Results. We can always manually approve these actions BEFORE Dynatrace gets to - but - well - whats the point in automating then? :-)
-In case Dynatrace Accepts or Rejects the Approval Stage you will find details about it on the Action itself. You also find a link to the report that gives you the historical overview.
+As explained above, *validateBuildDynatraceWorker" is also approving or rejecting the manual approval phase of your pipeline. In case that happens the Lambda function will put the results of the build validation in the Approval Details including a link to the Build Validation Report. Here are two example screenshots of an approved and a rejected build: 
 
 Approval Example | Reject Example
 ![](./images/buildvalidation_approvaldetails.png) | ![](./images/buildvalidation_rejectdetails.png)
 
-Here is the build validation overview report showing how it looks like when one of the build didnt validate successful. Seems in my case the max response time is above the allowed threshold:
+And here is the build validation overview report showing how it looks like when one of the build didnt validate successful. Seems in my case the max response time is above the allowed threshold:
 ![](./images/buildvalidation_htmlreport2.png)
 
 **TIP**: If Dynatrace rejects a build but you still want to push it into the next stage simply "Retry" that approval stage and then manually approve it!

@@ -500,11 +500,11 @@
             "Type": "AWS::Lambda::Function",
             "Properties": {
                 "FunctionName" : "handleDynatraceProblemNotification",
-                "Handler": "index.handler",
+                "Handler": "handleDynatraceProblemNotification.handler",
                 "Role": { "Fn::GetAtt": ["DynatraceLambdaRole", "Arn"] },
                 "Code": {
                     "S3Bucket": { "Ref" : "YourS3BucketName" },
-                    "S3Key": "lambdas/handleDynatraceProblemNotification.zip"
+                    "S3Key": "lambdas.zip"
                 },
                 "Runtime": "nodejs6.10",
                 "Timeout": "120",
@@ -517,11 +517,11 @@
             "Type": "AWS::Lambda::Function",
             "Properties": {
                 "FunctionName" : "getBuildValidationResults",
-                "Handler": "index.handler",
+                "Handler": "getBuildValidationResults.handler",
                 "Role": { "Fn::GetAtt": ["DynatraceLambdaRole", "Arn"] },
                 "Code": {
                     "S3Bucket": { "Ref" : "YourS3BucketName" },
-                    "S3Key": "lambdas/getBuildValidationResults.zip"
+                    "S3Key": "lambdas.zip"
                 },
                 "Runtime": "nodejs6.10",
                 "Timeout": "120",
@@ -534,11 +534,11 @@
             "Type": "AWS::Lambda::Function",
             "Properties": {
                 "FunctionName" : "getDynatraceBuildValidationResults",
-                "Handler": "index.handler",
+                "Handler": "getDynatraceBuildValidationResults.handler",
                 "Role": { "Fn::GetAtt": ["DynatraceLambdaRole", "Arn"] },
                 "Code": {
                     "S3Bucket": { "Ref" : "YourS3BucketName" },
-                    "S3Key": "lambdas/getDynatraceBuildValidationResults.zip"
+                    "S3Key": "lambdas.zip"
                 },
                 "Runtime": "nodejs6.10",
                 "Timeout": "120",
@@ -551,11 +551,11 @@
             "Type": "AWS::Lambda::Function",
             "Properties": {
                 "FunctionName" : "pushDynatraceDeploymentEvent",
-                "Handler": "index.handler",
+                "Handler": "pushDynatraceDeploymentEvent.handler",
                 "Role": { "Fn::GetAtt": ["DynatraceLambdaRole", "Arn"] },
                 "Code": {
                     "S3Bucket": { "Ref" : "YourS3BucketName" },
-                    "S3Key": "lambdas/pushDynatraceDeploymentEvent.zip"
+                    "S3Key": "lambdas.zip"
                 },
                 "Runtime": "nodejs6.10",
                 "Timeout": "120",
@@ -568,11 +568,11 @@
             "Type": "AWS::Lambda::Function",
             "Properties": {
                 "FunctionName" : "registerDynatraceBuildValidation",
-                "Handler": "index.handler",
+                "Handler": "registerDynatraceBuildValidation.handler",
                 "Role": { "Fn::GetAtt": ["DynatraceLambdaRole", "Arn"] },
                 "Code": {
                     "S3Bucket": { "Ref" : "YourS3BucketName" },
-                    "S3Key": "lambdas/registerDynatraceBuildValidation.zip"
+                    "S3Key": "lambdas.zip"
                 },
                 "Runtime": "nodejs6.10",
                 "Timeout": "120",
@@ -585,11 +585,11 @@
             "Type": "AWS::Lambda::Function",
             "Properties": {
                 "FunctionName" : "validateBuildDynatraceWorker",
-                "Handler": "index.handler",
+                "Handler": "validateBuildDynatraceWorker.handler",
                 "Role": { "Fn::GetAtt": ["DynatraceLambdaRole", "Arn"] },
                 "Code": {
                     "S3Bucket": { "Ref" : "YourS3BucketName" },
-                    "S3Key": "lambdas/validateBuildDynatraceWorker.zip"
+                    "S3Key": "lambdas.zip"
                 },
                 "Runtime": "nodejs6.10",
                 "Timeout": "120",
@@ -803,23 +803,6 @@
                                 "InputArtifacts": [{
                                     "Name": "Monspec"
                                 }],
-                                "Name": "RegisterDynatraceBuildValidation",
-                                "ActionTypeId": {
-                                    "Category": "Invoke",
-                                    "Owner": "AWS",
-                                    "Version": "1",
-                                    "Provider": "Lambda"
-                                },
-                                "Configuration": {
-                                    "FunctionName": "registerDynatraceBuildValidation",
-                                    "UserParameters": "StagingToProduction,5"
-                                },
-                                "RunOrder": 2
-                            },
-                            {
-                                "InputArtifacts": [{
-                                    "Name": "Monspec"
-                                }],
                                 "Name": "PushDynatraceDeploymentEvent",
                                 "ActionTypeId": {
                                     "Category": "Invoke",
@@ -832,13 +815,30 @@
                                     "UserParameters": "Staging,CodePipeline Deploying in Staging"
                                 },
                                 "RunOrder": 2
+                            },
+                            {
+                                "InputArtifacts": [{
+                                    "Name": "Monspec"
+                                }],
+                                "Name": "RegisterStagingValidation",
+                                "ActionTypeId": {
+                                    "Category": "Invoke",
+                                    "Owner": "AWS",
+                                    "Version": "1",
+                                    "Provider": "Lambda"
+                                },
+                                "Configuration": {
+                                    "FunctionName": "registerDynatraceBuildValidation",
+                                    "UserParameters": "StagingToProduction,5,ApproveStaging"
+                                },
+                                "RunOrder": 2
                             }
                         ]
                     },
                     {
                         "Name": "ApproveStaging",
                         "Actions": [{
-                            "Name": "ManualApproval",
+                            "Name": "ApproveStaging",
                             "ActionTypeId": {
                                 "Category": "Approval",
                                 "Owner": "AWS",
@@ -871,7 +871,7 @@
                                 "InputArtifacts": [{
                                     "Name": "SampleDevOpsAppTests"
                                 }],
-                                "Name": "DeplyTestsInProduction",
+                                "Name": "DeployTestsInProduction",
                                 "ActionTypeId": {
                                     "Category": "Deploy",
                                     "Owner": "AWS",
@@ -914,7 +914,7 @@
                                 },
                                 "Configuration": {
                                     "FunctionName": "registerDynatraceBuildValidation",
-                                    "UserParameters": "ProductionToProductionLastHour,5"
+                                    "UserParameters": "ProductionToProductionLastHour,5,ApproveProduction"
                                 },
                                 "RunOrder": 2
                             }
