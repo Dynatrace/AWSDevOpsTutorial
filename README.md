@@ -235,6 +235,7 @@ Alright. So - we now have automated performance data from our Staging Enviornmen
 As explained above, *validateBuildDynatraceWorker" is also approving or rejecting the manual approval phase of your pipeline. In case that happens the Lambda function will put the results of the build validation in the Approval Details including a link to the Build Validation Report. Here are two example screenshots of an approved and a rejected build: 
 
 Approval Example | Reject Example
+------------ | -------------
 ![](./images/buildvalidation_approvaldetails.png) | ![](./images/buildvalidation_rejectdetails.png)
 
 And here is the build validation overview report showing how it looks like when one of the build didnt validate successful. Seems in my case the max response time is above the allowed threshold:
