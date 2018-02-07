@@ -9,12 +9,14 @@ The goal of this tutorial is having a full end-to-end AWS DevOps Pipeline (Stagi
 
 ![](./images/workflowanimated.gif)
 
-You can also [download the slides](https://github.com/Dynatrace/AWSDevOpsTutorial/blob/master/PERFORM2018_HOTDAY_PM_GRABNER_UnbreakablePipeline.PPTX?raw=true) we used at our Dynatrace PERFORM 2018 HOT (Hands On Training) Day. The slides contain more background information and more detailed steps!
+**ATTENTION** The Tutorial will create several AWS Resources such as 2 EC2 Instances, CodePipeline, CodeDeploy, Lambdas, S3 and a DynamoDB table. In order to save costs make sure to power down the CloudFormation stack after you are done with your tutorial.
 
-Before we launch the CloudFormation stack which will create all required resources (EC2 Instances, Lambdas, CodeDeploy, CodePipeline, API Gateway) lets make sure we have all pre-requisits covered!
+**SLIDE DECKS from PERFORM 2018 HOTDAY** You can [download the slides](https://github.com/Dynatrace/AWSDevOpsTutorial/blob/master/PERFORM2018_HOTDAY_PM_GRABNER_UnbreakablePipeline.PPTX?raw=true) we used at our Dynatrace PERFORM 2018 HOT (Hands On Training) Day. The slides contain more background information and more detailed steps. I recommend though to simply run through the steps explained on this GitHub page!
+
+**Lets get this party started:** Before we launch the CloudFormation stack which will create all required resources (EC2 Instances, Lambdas, CodeDeploy, CodePipeline, API Gateway) lets make sure we have all pre-requisites covered!
 
 ## Pre-Requisits
-1. You need an AWS account. If you dont have one [get one here](https://aws.amazon.com/)
+1. You need an AWS account. If you don't have one [get one here](https://aws.amazon.com/)
 2. You need a Dynatrace Account. Get your [Free SaaS Trial here!](http://bit.ly/dtsaastrial)
 3. You need to clone or copy the content of this GitHub repo to your local disk!
 
@@ -75,7 +77,7 @@ Region | Launch Template
 ![](./images/createstack_step4.png)
 
 ### Step 5: Once Done. Check outputs
-There is a lot of useful information here, e.g: the PublicDNS of the two EC2 Instances that got created and also the links to the Public API Gateway we created that allows us to execute some Lambda functions.
+There is a lot of useful information here, e.g: the PublicDNS of the two EC2 Instances that got created and the links to the Public API Gateway we created that allows us to execute some Lambda functions.
 ![](./images/createstack_step5.png)
 
 ## Lets explore what has been created
@@ -109,7 +111,7 @@ pm2 start testapp.js &> pm2start.log
 Lets move to Dynatrace and validate that these two EC2 machines are actually monitored. In your Dynatrace Web UI simply go to Hosts - you should see 2 new hosts. If you have the [Dynatrace AWS CloudWatch](https://www.dynatrace.com/support/help/cloud-platforms/amazon-web-services/how-do-i-start-amazon-web-services-monitoring/) integration setup the host name should reflect the actual names Staging and Production. Otherwise it will show up the unique EC2 Instance Name:
 ![](./images/createstack_dynatracehostlist1.png)
 **Sanity Check:** 
-If you dont see these two hosts it means something went wrong with the OneAgent installation. Most likely root cause is that you didnt use the correct OneAgent Download Link when creating the CloudFormation stack. In that case. Delete the stack and start all over. Double check that you really copy the correct *Download Link*, *Tenant URL* and *API Token*!
+If you don't see these two hosts it means something went wrong with the OneAgent installation. Most likely root cause is that you didn't use the correct OneAgent Download Link when creating the CloudFormation stack. In that case. Delete the stack and start all over. Double check that you really copy the correct *Download Link*, *Tenant URL* and *API Token*!
 
 When clicking on one of these hosts you can also see that Dynatrace alread does FullStack monitoring of that host. Depending on how far the CodePipeline (that also executed in the background) already executed you may or may not see some additional Node.js processes here. As long as you start seeing any data here you are good :-)
 ![](./images/createstack_dynatracehost1.png)
@@ -150,11 +152,11 @@ As the Dynatrace configuration for automated Service Tagging is now done, we sim
 ![](./images/createstack_codepipeline2.png)
 
 *Pipeline Stages: Source and Staging*
-The Pipeline pulls code from S3 and uses AWS CodeDeploy to deploy an application into staging, launch a simple "load testing script" and will lets Dynatrace know about these deployments by sending a Deployment Event to the monitored Services (this is where the tag rule we just created comes in). 
+The Pipeline pulls code from S3 and uses AWS CodeDeploy to deploy an application into staging, launch a simple "load testing script" and lets Dynatrace know about these deployments by sending a Deployment Event to the monitored Services (this is where the tag rule we just created comes in). 
 The Pipeline will also register a so called Dynatrace Build Validation run (we will learn more about this later).
 
 *Pipeline Stage: Approve Staging*
-Let the pipeline run until it reaches the *Approve Staging* stage. After 5 Minutes Dynatrace will validate the build and then either approve or reject the build depending on real time performance data. If you dont want to wait you can always approve or reject manually!
+Let the pipeline run until it reaches the *Approve Staging* stage. After 5 Minutes Dynatrace will validate the build and then either approve or reject the build depending on real time performance data. If you don't want to wait you can always approve or reject manually!
 ![](./images/createstack_codepipeline3.png)
 
 *Pipeline Stage: Production*
@@ -165,9 +167,9 @@ The last step in the Pipeline is to approve that Production Deployment was good.
 
 ### Our Deployed Application
 
-If the Pipeline succeeded we should be able to navigate to our deployed application in Staging and Production. You saw the Public DNS for our two server instances in the *CloudFormation Output*. If you dont remember either go back to the CloudFormation overview or navigate to your EC2 Instances. You will see both instances there and you can also get to the Public DNS and also Public IP.
+If the Pipeline succeeded we should be able to navigate to our deployed application in Staging and Production. You saw the Public DNS for our two server instances in the *CloudFormation Output*. If you don't remember either go back to the CloudFormation overview or navigate to your EC2 Instances. You will see both instances there and you can also get to the Public DNS and also Public IP.
 
-If we take the public IP or public DNS we simply put it in a browser and navigate to default port 80. Lets see whether our app is up and running!
+If we take the public IP or public DNS we simply put it in a browser and navigate to default port 80. Let's see whether our app is up and running!
 ![](./images/createstack_appcheck1.png)
 
 GRANTED - not the most beautiful looking app, but it does its job :-)
@@ -177,7 +179,7 @@ GRANTED - not the most beautiful looking app, but it does its job :-)
 Behind the scenes a Dynatrace OneAgent not only monitors our hosts (we verified that earlier), but does FullStack monitoring which includes EVERY process, service and application that gets deployed on these hosts!
 
 *Service Monitoring*
-When CodeDeploy deployed the app it also pushed some additonal environment variables to the Node.js process, telling Dynatrace more about the actual application and services. Here is part of the start_server.sh script that CodeDeploy executes. You see that we are leveraging our DT_TAGS, DT_CUSTOM_PROP and DT_CLUSTER_ID. If you want to learn more about tagging options start with this blog post: [Automate the tagging of entities with environment variables](https://www.dynatrace.com/blog/automate-tagging-entities-environment-variables/)
+When CodeDeploy deployed the app it also pushed some additional environment variables to the Node.js process, telling Dynatrace more about the actual application and services. Here is part of the start_server.sh script that CodeDeploy executes. You see that we are leveraging our DT_TAGS, DT_CUSTOM_PROP and DT_CLUSTER_ID. If you want to learn more about tagging options start with this blog post: [Automate the tagging of entities with environment variables](https://www.dynatrace.com/blog/automate-tagging-entities-environment-variables/)
 ```
 export DT_TAGS=APPLICATION_NAME=$APPLICATION_NAME
 export DT_CUSTOM_PROP="DEPLOYMENT_ID=$DEPLOYMENT_ID DEPLOYMENT_GROUP_NAME=$DEPLOYMENT_GROUP_NAME APPLICATION_NAME=$APPLICATION_NAME"
@@ -198,11 +200,11 @@ If you want to learn more about how to explore this data from here, e.g: see dow
 
 ## 2. Lets run another CodePipeline
 
-To simulate a new pipeline run lets go back to our AWS CodePipeline and click on "Release change". This will trigger a new release of the current build. Once the Pipeline reaches the Approval Phases manually aprove it. 
+To simulate a new pipeline run lets go back to our AWS CodePipeline and click on "Release change". This will trigger a new release of the current build. Once the Pipeline reaches the Approval Phases manually approve it. 
 
 ### Validate Dynatrace Deployment Event
 
-Everytime a deployment happens from our Pipeline we should see that information on the service that Dynatrace monitors. Lets go back to one of the services (Staging or Production) and explore the 
+Every time a deployment happens from our Pipeline we should see that information on the service that Dynatrace monitors. Lets go back to one of the services (Staging or Production) and explore the 
 ![](./images/createstack_dynatrace_deployevents1.png)
 
 ### Explore Performance Data per Pipeline Run
@@ -212,7 +214,7 @@ In a "non automated" world the approver of a build would go off to all sorts of 
 
 **BUT THAT IS A BORING TASK!! A TASK THAT CAN BE AUTOMATED!!**
 
-In our AWS CodePipeline you may have noticed an action called *RegisterStagingValidation*. This action triggers the Lambda function *registerDynatraceBuildValidation* with the parameters: *StagingToProduction,5,ApproveStaging*. These parameters tell our Lambda function that we want to compare key metrics from Staging vs Production. It also tells it that we dont want to do it right away but start in 5 minutes. Reason for that is because we first want to give the load test the chance to generate some load. And once the validation happened it should Approve or Reject the Approval Action with the name *ApproveStaging*!
+In our AWS CodePipeline you may have noticed an action called *RegisterStagingValidation*. This action triggers the Lambda function *registerDynatraceBuildValidation* with the parameters: *StagingToProduction,5,ApproveStaging*. These parameters tell our Lambda function that we want to compare key metrics from Staging vs Production. It also tells it that we don't want to do it right away but start in 5 minutes. Reason for that is because we first want to give the load test the chance to generate some load. And once the validation happened it should Approve or Reject the Approval Action with the name *ApproveStaging*!
 
 *registerDynatraceBuildValidation*: This AWS Lambda is actually not doing a whole lot. It is simply putting a "Build Validation Request" in a DynamoDB table with all the information needed to process the request once the timespan, e.g: 5 minutes has passed. If you want go ahead and explorer your DynamoDB table called *BuildValidationRequests*:
 ![](./images/buildvalidation_dynamodbtable1.png)
@@ -226,11 +228,11 @@ In case we have configured an ApprovalAction this Lambda function approves or re
 So - one way to look at the data would be to go back to the DynamoDB table and manually look at the Monspec column. **BUT - THAT IS ALSO BORING AND A MANUAL TASK!!**
 
 *getBuildValidationResults*: This brings us to this AWS Lambda function which allows us to query build validation information and get it presented in a "nice" HTML page (I have to admit - I am not a Web Frontend Guru - this is the best I could come up with). 
-To easier acces this AWS Lambda function, our CloudFormation stack created an API Gateway with a public method. If you go back to your CloudFormation Output you should see one output with the name *DynatraceBuildReportEndpoint*. It should say something like this: https://abcdefgh.execute-api.us-west-2.amazonaws.com/v1/BuildValidationResults
+To easier access this AWS Lambda function, our CloudFormation stack created an API Gateway with a public method. If you go back to your CloudFormation Output you should see one output with the name *DynatraceBuildReportEndpoint*. It should say something like this: https://abcdefgh.execute-api.us-west-2.amazonaws.com/v1/BuildValidationResults
 Go ahead and open it - the report gives you a list of metrics and for every build these metrics got evaluated we see the values from our Source System (e.g: Staging), the Comparison System (e.g: Production), the allowed calculated Threshold and whether the current value Violated the threshold!
 ![](./images/buildvalidation_htmlreport1.png)
 
-Alright. So - we now have automated performance data from our Staging Enviornment that gets automatically compared to our Production environment every time we run a build. We have all this data in DynamoDB and accessible as an HTML report.
+Alright. So - we now have automated performance data from our Staging Environment that gets automatically compared to our Production environment every time we run a build. We have all this data in DynamoDB and accessible as an HTML report.
 
 ## 3. More details about Automated Approvals
 
@@ -240,14 +242,14 @@ Approval Example | Reject Example
 ------------ | -------------
 ![](./images/buildvalidation_approvaldetails.png) | ![](./images/buildvalidation_rejectdetails.png)
 
-And here is the build validation overview report showing how it looks like when one of the build didnt validate successful. Seems in my case the max response time is above the allowed threshold:
+And here is the build validation overview report showing how it looks like when one of the build didn't validate successful. Seems in my case the max response time is above the allowed threshold:
 ![](./images/buildvalidation_htmlreport2.png)
 
 **TIP**: If Dynatrace rejects a build but you still want to push it into the next stage simply "Retry" that approval stage and then manually approve it!
 
 ### Deploy a "bad" version into Staging
 
-Our Sample app is not just a static app. It actually supportes "different builds" where every build lets the app experience different performance behavior. A great way to test our pipeline.
+Our Sample app is not just a static app. It actually supports "different builds" where every build lets the app experience different performance behavior. A great way to test our pipeline.
 By default the app runs with *Build 1*. Build number is passed as an environment variable when CodeDeploy launches the app. Check out *start_server.sh* where we pass the env-variable:
 ```
 export BUILD_NUMBER=1
@@ -263,7 +265,7 @@ Build | Problem
 4 | no problem in staging but problem in prod -> higher sleep time and 10% of requests fail
 
 Here are my suggestions for your next steps:
-1. Try Build 2 and see whether the automated approval for Staging actually rejects the build. It should becuase 50% of requests fail which means that Failure Rate should show a violation as compared to Production. Here is my report output nicely showing the spike in Failure Rate which is why my build was violated!
+1. Try Build 2 and see whether the automated approval for Staging actually rejects the build. It should because 50% of requests fail which means that Failure Rate should show a violation as compared to Production. Here is my report output nicely showing the spike in Failure Rate which is why my build was violated!
 ![](./images/buildvalidation_htmlreport_build2.png)
 
 2. Then try Build 3. Everything should be good again and the pipeline should make it all the way to Production
@@ -272,23 +274,23 @@ Here are my suggestions for your next steps:
 
 ### How to deploy one of these builds?
 
-The GitHub repo contains a directoy called appbuilds_readytodeploy. In this directory you find 4 zip files of the appp. The only difference in each zip file is that the BUILD_NUMBER is set to either 1, 2, 3 or 4.
+The GitHub repo contains a directory called appbuilds_readytodeploy. In this directory you find 4 zip files of the app. The only difference in each zip file is that the BUILD_NUMBER is set to either 1, 2, 3 or 4.
 If you want to deploy a build simply take one of these zip files, rename it app.zip and upload it to your S3Bucket where you initially uploaded the app.zip file. Overwrite the existing version.
-Now go to your AWS CodePipeline and click on "Release Change". Thats it!
+Now go to your AWS CodePipeline and click on "Release Change". That's it!
 
 ## 4. Lets implement Self-Healing through Dynatrace and AWS Lambda
 
-Last step in our tutorial is to automate handling a problem in production. Besides doing our Production Approval stage where we compare key metrics against a previous timeframe, Dynatrace provides a much smarter way to detect production problems. Dyntrace baslines every single metric for us, it also keeps an eye on critical log messages, end user behavior and infrastructure issues. In case a problem comes up that impacts our end users or service endpoints a new Problem Ticket gets created. The following ticket is an example if you deploy a bad build. Dyntrace automatically detects that something is wrong with our production service:
+Last step in our tutorial is to automate handling a problem in production. Besides doing our Production Approval stage where we compare key metrics against a previous timeframe, Dynatrace provides a much smarter way to detect production problems. Dynatrace baselines every single metric for us, it also keeps an eye on critical log messages, end user behavior and infrastructure issues. In case a problem comes up that impacts our end users or service endpoints a new Problem Ticket gets created. The following ticket is an example if you deploy a bad build. Dynatrace automatically detects that something is wrong with our production service:
 ![](./images/problemdetection1.png)
 Clicking on the details shows us how and when Dynatrace detected that problem:
 ![](./images/problemdetection2.png)
 
 ### Dynatrace Problem Notification
 
-Everytime a problem ticket is opened Dynatrace can notify external tools, e.g: ServiceNow, PagerDuty, xMatters, JIRA, AWS API Gateways, ... about this problem. For our purposes we can let Dynatrace call an AWS Lambda function that we expose through a public API Gateway. Our CloudFormation Stack already created that endpoint for us. Go back to your CloudFormation Output list and find the link for the output *HandleDynatraceProblemEndpoint*. It shoudl be something like: https://abcdefgh.execute-api.us-west-2.amazonaws.com/v1/HandleDynatraceProblem
+Every time a problem ticket is opened Dynatrace can notify external tools, e.g: ServiceNow, PagerDuty, xMatters, JIRA, AWS API Gateways, ... about this problem. For our purposes we can let Dynatrace call an AWS Lambda function that we expose through a public API Gateway. Our CloudFormation Stack already created that endpoint for us. Go back to your CloudFormation Output list and find the link for the output *HandleDynatraceProblemEndpoint*. It shoudl be something like: https://abcdefgh.execute-api.us-west-2.amazonaws.com/v1/HandleDynatraceProblem
 
 **Alerting Profiles**
-In Dynatrace we can now configure our Problem Notification Integration to always call that endpoint in case a problem is detected. But instead of pushing ALL problems to this endpoint we can configure a so called "Alerting Profile" which allows us to only notify in case certain events happen on certain entities. In our case we only want to push Problems that happen in our Production Environment to this endpoint. In Dynatrace go to Settings - Alerting - Alerting Profiles and lets create a new Profile called ProductionService. In that profile we are only intersted in Error, Slowdown and Custom Alerts for those entities that have the DeploymentGroup:Production tag on it. So - thats our services that are deployed by CodeDeploy and where that environment variable is passed:
+In Dynatrace we can now configure our Problem Notification Integration to always call that endpoint in case a problem is detected. But instead of pushing ALL problems to this endpoint we can configure a so called "Alerting Profile" which allows us to only notify in case certain events happen on certain entities. In our case we only want to push Problems that happen in our Production Environment to this endpoint. In Dynatrace go to Settings - Alerting - Alerting Profiles and lets create a new Profile called ProductionService. In that profile we are only interested in Error, Slowdown and Custom Alerts for those entities that have the DeploymentGroup:Production tag on it. So - thats our services that are deployed by CodeDeploy and where that environment variable is passed:
 ![](./images/alertingprofile1.png)
 
 **Problem Notification with AWS Lambda**
@@ -296,7 +298,7 @@ No that we have our Alerting Profile we can go ahead and actually setup the inte
 Configure your integration as shown in the next screenshot. Give it a meaningful name. Then put in your HandleDynatraceProblem endpoint and click on Test Notification to test it out:
 ![](./images/problemnotificationlambda1.png)
 
-AND THATS IT - seriously! :-)
+AND THAT'S IT - seriously! :-)
 
 ### Self-Healing AWS Lambda Function
 
@@ -318,7 +320,7 @@ There are a couple of additional things we can do to make this even better
 
 ### Automated Service Naming Rules
 
-While Dynatrace automatically detects our services and gives them a proper name we end up having the same service name multiple timese - one per environment. In order to get better default naming we can create a so called "Service naming rule". In the Dynatrace Web UI go to Settings -> Service naming rules and create a new custom rule just as I have done here:
+While Dynatrace automatically detects our services and gives them a proper name we end up having the same service name multiple times - one per environment. In order to get better default naming we can create a so called "Service naming rule". In the Dynatrace Web UI go to Settings -> Service naming rules and create a new custom rule just as I have done here:
 ![](./images/servicenaming_ruleconfig1.png)
 
 Here is how I configured my name rule:
@@ -342,9 +344,9 @@ In Dynatrace Web UI open the Service Details view for your Staging or Production
 Click on the serviceoutput.log entry which brings you to the Log Monitoring Feature. Click on "Display Log" and you will see all the log messages that came in in the selected timeframe:
 ![](./images/logmonitoring_displaylogpng.png)
 
-If you dont see the error log yet go back to your browser and execute the /api/causeerror on your staging or production instance. Then refresh that log view until you see the log entry coming in.
+If you don't see the error log yet go back to your browser and execute the /api/causeerror on your staging or production instance. Then refresh that log view until you see the log entry coming in.
 
-The Log viewer also allows us to define a filter, e.g: lets filter on "sombody called /api/causerror". You can actually click in the bottom log entry view and the UI will give you an option to start defining these filters based on real log entries. This is what you should see then:
+The Log viewer also allows us to define a filter, e.g: lets filter on "somebody called /api/causerror". You can actually click in the bottom log entry view and the UI will give you an option to start defining these filters based on real log entries. This is what you should see then:
 ![](./images/logmonitoring_filterlog.png)
 
 If we have a filter that we are really interested in we can go a step further. We can click on "Define event" which brings us to our Custom Log Event configuration - already pre-populated with our pattern. What we want to do here is to give it a name, select generate "Log Error Problem" and change the occurences to higher than 0 per min. That will force Dynatrace to immediately open a Problem Ticket if one of these error logs is detected. If we want Dynatrace to not only monitor the Staging or Production system but actually both you can adjust the log file filter on the bottom of the screen. Here you can select all log files that Dynatrace should monitor for that log pattern:
@@ -358,7 +360,7 @@ Now - creating a Problem Ticket for every time we see this log message might not
 
 ### Monspec - Monitoring as Code Configuration
 
-One aspect we havent discussed in more detail is the actual configuration that tells our lambda functions which Dynatrace Entities to query, which metrics and timeframes to compare. This configuration is all stored in "monspec.json". A json file that our Pipeline defines as an Input Artifact. The idea behind this configuration file is that a developer of a service can define the following things
+One aspect we haven't discussed in more detail is the actual configuration that tells our lambda functions which Dynatrace Entities to query, which metrics and timeframes to compare. This configuration is all stored in "monspec.json". A json file that our Pipeline defines as an Input Artifact. The idea behind this configuration file is that a developer of a service can define the following things
 1. How to identify that service in the different environments
 2. How to compare that service between environments
 3. Which metrics to compare and whether it is a 1:1 comparison or whether a special baseline factor should be applied
@@ -454,5 +456,5 @@ Here are several snippets of this monspec file that should explain how it works:
 
 ## 6. Summary - Next Steps
 I hope you enjoyed that tutorial and you saw the value of adding Dynatrace into your DevOps Pipeline. We discussed a couple of concepts on how to leverage the Automation API, Automated Tagging and Baselining to implement concepts such as Shift-Left and Self-Healing.
-There is more that can be done. If you want to learn more check out my YouTube Channel on [Dyntrace FullStack Performance Clinics](http://bit.ly/oneagenttutorials)
-If you have any further questions dont hesitate to ask!
+There is more that can be done. If you want to learn more check out my YouTube Channel on [Dynatrace FullStack Performance Clinics](http://bit.ly/oneagenttutorials)
+If you have any further questions don't hesitate to ask!
