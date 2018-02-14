@@ -12,7 +12,7 @@ The goal of this tutorial is having a full end-to-end AWS DevOps Pipeline (Stagi
 **ATTENTION:** The Tutorial will create several AWS Resources such as 2 EC2 Instances, CodePipeline, CodeDeploy, Lambdas, S3 and a DynamoDB table. In order to save costs make sure to power down the CloudFormation stack after you are done with your tutorial.
 
 **Online Performance Clinic:** I ran an Online Performance Clinic which you can watch on our [Dynatrace Fullstack Live Performance Clinics Channel](https://www.youtube.com/watch?v=r-0xunTqwQ0&index=3&list=PLqt2rd0eew1YFx9m8dBFSiGYSBcDuWG38) 
-You can also [download the slides I used](https://github.com/Dynatrace/AWSDevOpsTutorial/blob/master/Performance%20Clinic%20-%20UnbreakablePipeline.PPTX?raw=true)!
+You can also [download the slides I used](https://github.com/Dynatrace/AWSDevOpsTutorial/blob/master/Performance%20Clinic%20-%20UnbreakablePipeline.pptx?raw=true)!
 
 **Lets get this party started:** Before we launch the CloudFormation stack which will create all required resources (EC2 Instances, Lambdas, CodeDeploy, CodePipeline, API Gateway) lets make sure we have all pre-requisites covered!
 
