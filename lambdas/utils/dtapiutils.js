@@ -104,7 +104,7 @@ exports.dtApiInit = function(callback) {
 }
 
 /**
- * Makes a call to the Dynatrace REST API. 
+ * Makes a POST call to the Dynatrace REST API. 
  * @param {String} dtUrl
  *  This should be the FULL Url to the rest api, e.G: http://yourtenant.live.dynatrace.com/api/v1/events
  *  You can get the base URL via exports.getDtTenantUrl

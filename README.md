@@ -336,7 +336,7 @@ This will result in better to understand service names as the name will include 
 Dynatrace OneAgent automatically monitors all important log files. Dynatrace automatically detects critical or severe log messages written to these files but we can also define our own custom Log Monitoring Rules which will then automatically create an event on the Entity (Process, Host) that creates that log message.
 Our application is mainly logging informational entries, e.g: when another 100 requests are processed. But there are two important log messages the app is writing in case somebody
 1. Forces a critical error by invoking the url /api/causeerror
-2. Changes the build number by invoking the url /api/buildnumber?newBuildNumber=X
+2. Changes the build number by invoking the url /api/version?newBuildNumber=X
 
 In the first case the app logs a SEVERE log message. In the latter it logs a WARNING. We can see these log messages by opening up the log file. 
 In Dynatrace Web UI open the Service Details view for your Staging or Production Service. Now navigate to the NodeJS process that actually runs that service. You should see a screenshot like this and you should find the section about monitored log files:

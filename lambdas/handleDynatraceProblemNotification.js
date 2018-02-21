@@ -192,7 +192,7 @@ var getMostRecentDeploymentOnEntity = function(entities, index, timespan, result
     if(timespan != null && timespan > 0) queryString += "&to=" + to + "&from=" + from;
     
     console.log("Executing Query: " + queryString);
-    dtApiUtils.dtApiGet(dtEventUrl, dtApiUtils.getDtApiToken(), queryString, function(statusCode, data) {
+    dtApiUtils.dtApiPost(dtEventUrl + queryString, dtApiUtils.getDtApiToken(), null, function(statusCode, data) {
         // if we got a list of events only look at the most recent one that came from CodePipeline
         if(statusCode == 200 && data) {
             var events = JSON.parse(data).events;
