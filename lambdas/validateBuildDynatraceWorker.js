@@ -195,8 +195,12 @@ var processMonspec = function(monspec, fromtime, totime, comparisonname, callbac
                         shifttimeframe = comparisonConfig.hasOwnProperty("shiftcomparetimeframe") ? comparisonConfig.shiftcomparetimeframe * 1000 : 0;
                         dtApiUtils.queryEntities(entitydef.etype.toLowerCase(), entitydef.environments[comparisonConfig.compare].tags, fromtime - shifttimeframe, totime - shifttimeframe, false, function(err, data) {
                             if(err) {
-                                callback(err, null); 
-                                return;
+                                // if we cant find entities that match the tags we only continue with SOURCE and not COMPARE it with anything else. could be that e.g: we dont have data right now in the comparision timeframe 
+                                // if the error indicates an API fatal error then we will fail as well!
+                                if(err == "500") {
+                                    callback(err, null); 
+                                    return;
+                                }
                             }
                                 
                             // write the found entities back into the _resolved_entities property

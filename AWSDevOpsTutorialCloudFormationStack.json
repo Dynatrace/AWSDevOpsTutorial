@@ -345,7 +345,7 @@
                             "# First: we download and install the Dynatrace OneAgent\n",
                             "yum update -y\n",
                             "yum install ruby wget -y\n",
-                            "wget -O Dynatrace-OneAgent-Linux.sh \"", {
+                            "wget --no-check-certificate -O Dynatrace-OneAgent-Linux.sh \"", {
                                 "Ref": "DynatraceOneAgentURL"
                             }, "\"\n",
                             "sudo /bin/sh Dynatrace-OneAgent-Linux.sh APP_LOG_CONTENT_ACCESS=1\n",
@@ -421,7 +421,7 @@
                         "Fn::Join": ["", [
                             "#!/bin/bash -x\n",
                             "# First: we download and install the Dynatrace OneAgent - TODO: Make sure you download YOUR OneAgent for your Dynatrace Tenant\n",
-                            "wget -O Dynatrace-OneAgent-Linux.sh \"", {
+                            "wget --no-check-certificate -O Dynatrace-OneAgent-Linux.sh \"", {
                                 "Ref": "DynatraceOneAgentURL"
                             }, "\"\n",
                             "sudo /bin/sh Dynatrace-OneAgent-Linux.sh APP_LOG_CONTENT_ACCESS=1\n",
