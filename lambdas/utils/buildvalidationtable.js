@@ -57,11 +57,10 @@ exports.createBuildValidationEntry = function(request, callback) {
 }
 
 /**
- * Returns the build validation entries that are ready for processing
- * @param {Function} callback (err, dataItems)
- *  dataItems is the list of DynamoDB Items!
- */
-exports.getBuildValidationsReadyForProcessing = function(callback) {
+ * Helper function that gets called recursively in case there are too many scan results! 
+ * Will be called from getBuildValidationsReadyForProcessing!
+ */ 
+var scanForNextBuildValidationReadyForProcessing = function(LastEvaluatedKey, callback) {
     var ddb = new AWS.DynamoDB();
     var timestamp = Date.now();
 
@@ -78,6 +77,9 @@ exports.getBuildValidationsReadyForProcessing = function(callback) {
         TableName: DYNAMODBTABLE,
         Select : 'ALL_ATTRIBUTES'
     };
+    if(LastEvaluatedKey) {
+        params.ExclusiveStartKey = LastEvaluatedKey;
+    }
 
     // lets execute the query!
     ddb.scan(params, function(err, data) {
@@ -86,6 +88,13 @@ exports.getBuildValidationsReadyForProcessing = function(callback) {
             callback(err, null);
             return;
         }
+        
+        // the scan will only scan to a maximum limit - if no elements are found in the scan but there is more data to scan we have to check on LastEvaluatedKey. If that value is not empty we have run another scan
+        if(data.Items.length == 0 && data.LastEvaluatedKey) {
+            scanForNextBuildValidationReadyForProcessing(data.LastEvaluatedKey, callback);
+            return;
+        }
+
         
         if(data.Items.length == 0) {
             console.log("No requests in state waiting found in DynamoDB Table");
@@ -96,6 +105,16 @@ exports.getBuildValidationsReadyForProcessing = function(callback) {
         // return back the list of entries!
         callback(null, data.Items);
     });
+    
+}
+
+/**
+ * Returns the build validation entries that are ready for processing
+ * @param {Function} callback (err, dataItems)
+ *  dataItems is the list of DynamoDB Items!
+ */
+exports.getBuildValidationsReadyForProcessing = function(callback) {
+    scanForNextBuildValidationReadyForProcessing(null, callback);
 }
                     
 /**
