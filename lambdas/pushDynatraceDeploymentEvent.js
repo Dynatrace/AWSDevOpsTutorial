@@ -71,6 +71,14 @@ exports.handler = function(event, context, callback) {
     
                     // if we dont have a type we assume it is just an annotation
                     if(!postedData.eventType) postedData.eventType = jobDetails.codedeploy ? "CUSTOM_DEPLOYMENT" : "CUSTOM_ANNOTATION";
+    
+                    // every property in the jobDetails object becomes a custom property as well
+                    if(!postedData.customProperties) postedData.customProperties = { "PipelineName" : jobDetails.pipelineName, "PipelineStage" : jobDetails.stage, "PipelineAction" : jobDetails.action};
+                    if(jobDetails.codedeploy) {
+                        postedData.customProperties["CodeDeploy.DeploymentGroup"] = jobDetails.codedeploy.deploymentGroup;
+                        postedData.customProperties["CodeDeploy.Application"] = jobDetails.codedeploy.application;
+                        postedData.customProperties["CodeDeploy.DeploymentId"] = jobDetails.codedeploy.deploymentId;
+                    }
                     
                     // depending on the event type we also sete the the comment as either annotationtype or deploymentname
                     if(postedData.eventType == "CUSTOM_ANNOTATION") {
@@ -81,16 +89,14 @@ exports.handler = function(event, context, callback) {
                         if(!postedData.deploymentName) postedData.deploymentName = postedData.userComment ? postedData.userComment : jobDetails.pipelineName;
                         if(!postedData.deploymentVersion) postedData.deploymentVersion = jobDetails.codedeploy ? jobDetails.codedeploy.deploymentId : codePipelineJobId;
                         if(!postedData.deploymentProject) postedData.deploymentProject = jobDetails.pipelineName;
+                        
+                        // if it is a deployment pass the Self-Healing Lambda Function URL as remediationAction property
+                        var selfHealingUrl = dtApiUtils.getDtSelfHealingUrl()
+                        if(selfHealingUrl && selfHealingUrl.length > 0) {
+                            postedData.remediationAction = selfHealingUrl;
+                        }
                     }
     
-                    // every property in the jobDetails object becomes a custom property as well
-                    if(!postedData.customProperties) postedData.customProperties = { "PipelineName" : jobDetails.pipelineName, "PipelineStage" : jobDetails.stage, "PipelineAction" : jobDetails.action};
-                    if(jobDetails.codedeploy) {
-                        postedData.customProperties["CodeDeploy.DeploymentGroup"] = jobDetails.codedeploy.deploymentGroup;
-                        postedData.customProperties["CodeDeploy.Application"] = jobDetails.codedeploy.application;
-                        postedData.customProperties["CodeDeploy.DeploymentId"] = jobDetails.codedeploy.deploymentId;
-                    }
-                   
                     // and if no source is set then the pipeline becomes the source as well
                     if(!postedData.source) postedData.source = "AWS CodePipeline";
                     
@@ -191,7 +197,7 @@ var postEventToDynatraceApi = function(postedData, codePipelineJobId, context) {
     }
     
     // passing on all mandatory & optional values
-    var properties = ["deploymentName", "deploymentVersion", "deploymentProject", "annotationType", "annotationDescription", "source", "customProperties"];
+    var properties = ["deploymentName", "deploymentVersion", "deploymentProject", "annotationType", "annotationDescription", "source", "customProperties", "remediationAction"];
     for (var prop in properties) {
         var propName = properties[prop];
         if(postedData[propName]) event[propName] = postedData[propName];

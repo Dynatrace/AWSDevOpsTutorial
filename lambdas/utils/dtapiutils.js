@@ -15,6 +15,7 @@ var AWS = require('aws-sdk');
 var dtApiToken = null;
 var dtTenantUrl = null;
 var dtBuildReportUrl = null;
+var dtSelfHealingUrl = null;
 
 /**
  * TODO: Once AWS Provides Node8+ we have to switch to using async/await to make sure we wait for the return values
@@ -81,6 +82,14 @@ exports.getDtBuildReportUrl = function() {
 }
 
 /**
+ * @returns returns the url to the dynatrace Self-Healing Lambda Function created by cloudformation
+ */
+exports.getDtSelfHealingUrl = function() {
+    dtSelfHealingUrl = getSystemParameter('DT_SELF_HEALING_URL', dtSelfHealingUrl);
+    return dtSelfHealingUrl;
+}
+
+/**
  * This will initialize the Dynatrace API Helper Library
  * Right now this is mainly used to "prime" our API Token and URL - which should no longer be needed when AWS Upgrades Node.js to Node8
  * until node8 pleas call init and only proceed with your work if callback returns no error
@@ -97,7 +106,13 @@ exports.dtApiInit = function(callback) {
             getSystemParameter('DT_BUILD_REPORT_URL', dtBuildReportUrl, function(err, data) {
                 if(err) {callback(err, null); return};
                 dtBuildReportUrl = data;
-                callback(null, "OK");
+                
+                getSystemParameter('DT_SELF_HEALING_URL', dtSelfHealingUrl, function(err, data) {
+                    if(err) {callback(err, null); return};
+                    dtSelfHealingUrl = data;
+                    
+                    callback(null, "OK");
+                });
             });
         });
     });

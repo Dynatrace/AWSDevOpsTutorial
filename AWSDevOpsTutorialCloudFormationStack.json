@@ -88,6 +88,22 @@
                "Description": "Dynatrace Build Report URL"
             }
         },
+        "SSMSelfHealingURL": {
+            "Type": "AWS::SSM::Parameter",
+            "DependsOn" : ["DynatraceRestAPI"],
+            "Properties": {
+               "Name": "DT_SELF_HEALING_URL",
+               "Type": "String",
+               "Value": {
+                "Fn::Join": ["", ["https://", {
+                    "Ref": "DynatraceRestAPI"
+                }, ".execute-api.", {
+                    "Ref": "AWS::Region"
+                }, ".amazonaws.com/v1/HandleDynatraceProblem"]]                
+            },
+               "Description": "Dynatrace Self Healing URL"
+            }
+        },
 
         "DynatraceLambdaRole": {
             "Type": "AWS::IAM::Role",
@@ -308,7 +324,6 @@
                 ]
             }
         },
-
         "StagingInstance": {
             "Type": "AWS::EC2::Instance",
             "Properties": {
