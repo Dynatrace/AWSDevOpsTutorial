@@ -104,6 +104,9 @@
                 "Description": "Dynatrace Build Report URL"
             }
         },
+        "SSMSelfHealingURL": {
+            "Type": "AWS::SSM::Parameter",
+            "DependsOn" : ["DynatraceRestAPI"],
         "DynatraceLambdaRole1": {
             "Type": "AWS::IAM::Role",
             "Properties": {
