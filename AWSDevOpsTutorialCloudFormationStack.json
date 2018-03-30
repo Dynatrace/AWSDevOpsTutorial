@@ -107,6 +107,20 @@
         "SSMSelfHealingURL": {
             "Type": "AWS::SSM::Parameter",
             "DependsOn" : ["DynatraceRestAPI"],
+            "Properties": {
+               "Name": "DT_SELF_HEALING_URL",
+               "Type": "String",
+               "Value": {
+                "Fn::Join": ["", ["https://", {
+                    "Ref": "DynatraceRestAPI"
+                }, ".execute-api.", {
+                    "Ref": "AWS::Region"
+                }, ".amazonaws.com/v1/HandleDynatraceProblem"]]                
+            },
+               "Description": "Dynatrace Self Healing URL"
+            }
+        },
+
         "DynatraceLambdaRole1": {
             "Type": "AWS::IAM::Role",
             "Properties": {
