@@ -1,7 +1,6 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
     "Description": "Dynatrace AWS DevOps Workshop: For more details please check out the full tutorial on https://github.com/Dynatrace/AWSDevOpsTutorial",
-
     "Parameters": {
         "DynatraceTenantURL": {
             "Description": "Your full Dynatrace Tenant URL. For SaaS it is e.g: http://<YOURTENANTID>.live.dynatrace.com. For Managed something like https://yourserver/e/abcdefgh-1234-5678-abcd-55a7265f572f",
@@ -27,7 +26,11 @@
             "Description": "Instance Types for the EC2 Instances we create for Staging and Production",
             "Type": "String",
             "Default": "t2.micro",
-            "AllowedValues": ["t2.micro", "t2.small", "t2.medium"]
+            "AllowedValues": [
+                "t2.micro",
+                "t2.small",
+                "t2.medium"
+            ]
         },
         "YourS3BucketName": {
             "Description": "The name of your S3 Bucket where you uploaded your Dynatrace AWS DevOps Tutorial Material. Suggested name is <yourname>-dynatracedevops",
@@ -35,7 +38,6 @@
             "Default": "<YOURNAME>-dynatracedevops"
         }
     },
-
     "Mappings": {
         "RegionMap": {
             "us-east-1": {
@@ -52,56 +54,71 @@
             }
         }
     },
-
     "Resources": {
         "SSMParamDtTenantTUrl": {
             "Type": "AWS::SSM::Parameter",
             "Properties": {
-               "Name": "DT_TENANT_URL",
-               "Type": "String",
-               "Value": { "Ref" : "DynatraceTenantURL"},
-               "Description": "Dynatrace Tenant URL including your Environment in case you run managed"
+                "Name": "DT_TENANT_URL",
+                "Type": "String",
+                "Value": {
+                    "Ref": "DynatraceTenantURL"
+                },
+                "Description": "Dynatrace Tenant URL including your Environment in case you run managed"
             }
         },
         "SSMParamDtApiToken": {
             "Type": "AWS::SSM::Parameter",
             "Properties": {
-               "Name": "DT_API_TOKEN",
-               "Type": "String",
-               "Value": { "Ref" : "DynatraceAPIToken"},
-               "Description": "Dynatrace API Token"
+                "Name": "DT_API_TOKEN",
+                "Type": "String",
+                "Value": {
+                    "Ref": "DynatraceAPIToken"
+                },
+                "Description": "Dynatrace API Token"
             }
         },
         "SSMBuildReportURL": {
             "Type": "AWS::SSM::Parameter",
-            "DependsOn" : ["DynatraceRestAPI"],
+            "DependsOn": [
+                "DynatraceRestAPI"
+            ],
             "Properties": {
-               "Name": "DT_BUILD_REPORT_URL",
-               "Type": "String",
-               "Value": {
-                "Fn::Join": ["", ["https://", {
-                    "Ref": "DynatraceRestAPI"
-                }, ".execute-api.", {
-                    "Ref": "AWS::Region"
-                }, ".amazonaws.com/v1/BuildValidationResults"]]                
-            },
-               "Description": "Dynatrace Build Report URL"
+                "Name": "DT_BUILD_REPORT_URL",
+                "Type": "String",
+                "Value": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "https://",
+                            {
+                                "Ref": "DynatraceRestAPI"
+                            },
+                            ".execute-api.",
+                            {
+                                "Ref": "AWS::Region"
+                            },
+                            ".amazonaws.com/v1/BuildValidationResults"
+                        ]
+                    ]
+                },
+                "Description": "Dynatrace Build Report URL"
             }
         },
-
-        "DynatraceLambdaRole": {
+        "DynatraceLambdaRole1": {
             "Type": "AWS::IAM::Role",
             "Properties": {
-                "RoleName" : "DynatraceLambdaRole",
+                "RoleName": "DynatraceLambdaRole1",
                 "AssumeRolePolicyDocument": {
                     "Version": "2012-10-17",
-                    "Statement": [{
-                        "Action": "sts:AssumeRole",
-                        "Effect": "Allow",
-                        "Principal": {
-                            "Service": "lambda.amazonaws.com"
+                    "Statement": [
+                        {
+                            "Action": "sts:AssumeRole",
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": "lambda.amazonaws.com"
+                            }
                         }
-                    }]
+                    ]
                 },
                 "Path": "/",
                 "ManagedPolicyArns": [
@@ -115,19 +132,21 @@
                 ]
             }
         },
-        "DynatraceCodeDeployRole": {
+        "DynatraceCodeDeployRole1": {
             "Type": "AWS::IAM::Role",
             "Properties": {
-                "RoleName" : "DynatraceCodeDeployRole",
+                "RoleName": "DynatraceCodeDeployRole1",
                 "AssumeRolePolicyDocument": {
                     "Version": "2012-10-17",
-                    "Statement": [{
-                        "Action": "sts:AssumeRole",
-                        "Effect": "Allow",
-                        "Principal": {
-                            "Service": "codedeploy.amazonaws.com"
+                    "Statement": [
+                        {
+                            "Action": "sts:AssumeRole",
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": "codedeploy.amazonaws.com"
+                            }
                         }
-                    }]
+                    ]
                 },
                 "Path": "/",
                 "ManagedPolicyArns": [
@@ -135,165 +154,178 @@
                 ]
             }
         },
-        "DynatraceCodePipelineRole": {
+        "DynatraceCodePipelineRole1": {
             "Type": "AWS::IAM::Role",
             "Properties": {
-                "RoleName" : "DynatraceCodePipelineRole", 
+                "RoleName": "DynatraceCodePipelineRole1",
                 "AssumeRolePolicyDocument": {
                     "Version": "2012-10-17",
-                    "Statement": [{
-                        "Action": "sts:AssumeRole",
-                        "Effect": "Allow",
-                        "Principal": {
-                            "Service": "codepipeline.amazonaws.com"
+                    "Statement": [
+                        {
+                            "Action": "sts:AssumeRole",
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": "codepipeline.amazonaws.com"
+                            }
                         }
-                    }]
+                    ]
                 },
                 "Path": "/",
-                "Policies": [{
-                    "PolicyName": "DynatraceEC2CodeDeployInstanceProfilePolicy",
-                    "PolicyDocument": {
-                        "Statement": [{
-                                "Action": [
-                                    "s3:GetObject",
-                                    "s3:GetObjectVersion",
-                                    "s3:GetBucketVersioning"
-                                ],
-                                "Resource": "*",
-                                "Effect": "Allow"
-                            },
-                            {
-                                "Action": [
-                                    "s3:PutObject"
-                                ],
-                                "Resource": [
-                                    "arn:aws:s3:::codepipeline*",
-                                    "arn:aws:s3:::elasticbeanstalk*"
-                                ],
-                                "Effect": "Allow"
-                            },
-                            {
-                                "Action": [
-                                    "codecommit:CancelUploadArchive",
-                                    "codecommit:GetBranch",
-                                    "codecommit:GetCommit",
-                                    "codecommit:GetUploadArchiveStatus",
-                                    "codecommit:UploadArchive"
-                                ],
-                                "Resource": "*",
-                                "Effect": "Allow"
-                            },
-                            {
-                                "Action": [
-                                    "codedeploy:CreateDeployment",
-                                    "codedeploy:GetApplicationRevision",
-                                    "codedeploy:GetDeployment",
-                                    "codedeploy:GetDeploymentConfig",
-                                    "codedeploy:RegisterApplicationRevision"
-                                ],
-                                "Resource": "*",
-                                "Effect": "Allow"
-                            },
-                            {
-                                "Action": [
-                                    "elasticbeanstalk:*",
-                                    "ec2:*",
-                                    "elasticloadbalancing:*",
-                                    "autoscaling:*",
-                                    "cloudwatch:*",
-                                    "s3:*",
-                                    "sns:*",
-                                    "cloudformation:*",
-                                    "rds:*",
-                                    "sqs:*",
-                                    "ecs:*",
-                                    "iam:PassRole"
-                                ],
-                                "Resource": "*",
-                                "Effect": "Allow"
-                            },
-                            {
-                                "Action": [
-                                    "lambda:InvokeFunction",
-                                    "lambda:ListFunctions"
-                                ],
-                                "Resource": "*",
-                                "Effect": "Allow"
-                            },
-                            {
-                                "Action": [
-                                    "opsworks:*"
-                                ],
-                                "Resource": "*",
-                                "Effect": "Allow"
-                            },
-                            {
-                                "Action": [
-                                    "cloudformation:*",
-                                    "iam:PassRole"
-                                ],
-                                "Resource": "*",
-                                "Effect": "Allow"
-                            },
-                            {
-                                "Action": [
-                                    "codebuild:*"
-                                ],
-                                "Resource": "*",
-                                "Effect": "Allow"
-                            }
-                        ]
+                "Policies": [
+                    {
+                        "PolicyName": "DynatraceEC2CodeDeployInstanceProfilePolicy1",
+                        "PolicyDocument": {
+                            "Statement": [
+                                {
+                                    "Action": [
+                                        "s3:GetObject",
+                                        "s3:GetObjectVersion",
+                                        "s3:GetBucketVersioning"
+                                    ],
+                                    "Resource": "*",
+                                    "Effect": "Allow"
+                                },
+                                {
+                                    "Action": [
+                                        "s3:PutObject"
+                                    ],
+                                    "Resource": [
+                                        "arn:aws:s3:::codepipeline*",
+                                        "arn:aws:s3:::elasticbeanstalk*"
+                                    ],
+                                    "Effect": "Allow"
+                                },
+                                {
+                                    "Action": [
+                                        "codecommit:CancelUploadArchive",
+                                        "codecommit:GetBranch",
+                                        "codecommit:GetCommit",
+                                        "codecommit:GetUploadArchiveStatus",
+                                        "codecommit:UploadArchive"
+                                    ],
+                                    "Resource": "*",
+                                    "Effect": "Allow"
+                                },
+                                {
+                                    "Action": [
+                                        "codedeploy:CreateDeployment",
+                                        "codedeploy:GetApplicationRevision",
+                                        "codedeploy:GetDeployment",
+                                        "codedeploy:GetDeploymentConfig",
+                                        "codedeploy:RegisterApplicationRevision"
+                                    ],
+                                    "Resource": "*",
+                                    "Effect": "Allow"
+                                },
+                                {
+                                    "Action": [
+                                        "elasticbeanstalk:*",
+                                        "ec2:*",
+                                        "elasticloadbalancing:*",
+                                        "autoscaling:*",
+                                        "cloudwatch:*",
+                                        "s3:*",
+                                        "sns:*",
+                                        "cloudformation:*",
+                                        "rds:*",
+                                        "sqs:*",
+                                        "ecs:*",
+                                        "iam:PassRole"
+                                    ],
+                                    "Resource": "*",
+                                    "Effect": "Allow"
+                                },
+                                {
+                                    "Action": [
+                                        "lambda:InvokeFunction",
+                                        "lambda:ListFunctions"
+                                    ],
+                                    "Resource": "*",
+                                    "Effect": "Allow"
+                                },
+                                {
+                                    "Action": [
+                                        "opsworks:*"
+                                    ],
+                                    "Resource": "*",
+                                    "Effect": "Allow"
+                                },
+                                {
+                                    "Action": [
+                                        "cloudformation:*",
+                                        "iam:PassRole"
+                                    ],
+                                    "Resource": "*",
+                                    "Effect": "Allow"
+                                },
+                                {
+                                    "Action": [
+                                        "codebuild:*"
+                                    ],
+                                    "Resource": "*",
+                                    "Effect": "Allow"
+                                }
+                            ]
+                        }
                     }
-                }]
+                ]
             }
         },
-        "DynatraceEC2InstanceProfile": {
+        "DynatraceEC2InstanceProfile1": {
             "Type": "AWS::IAM::InstanceProfile",
             "Properties": {
-                "InstanceProfileName": "DynatraceEC2InstanceProfile",
+                "InstanceProfileName": "DynatraceEC2InstanceProfile1",
                 "Path": "/",
-                "Roles": [{
-                    "Ref": "DynatraceEC2InstanceProfileRole"
-                }]
+                "Roles": [
+                    {
+                        "Ref": "DynatraceEC2InstanceProfileRole1"
+                    }
+                ]
             }
         },
-        "DynatraceEC2InstanceProfileRole": {
+        "DynatraceEC2InstanceProfileRole1": {
             "Type": "AWS::IAM::Role",
             "Properties": {
-                "RoleName": "DynatraceEC2InstanceProfileRole",
+                "RoleName": "DynatraceEC2InstanceProfileRole1",
                 "AssumeRolePolicyDocument": {
                     "Version": "2012-10-17",
-                    "Statement": [{
-                        "Action": "sts:AssumeRole",
-                        "Effect": "Allow",
-                        "Principal": {
-                            "Service": "ec2.amazonaws.com"
+                    "Statement": [
+                        {
+                            "Action": "sts:AssumeRole",
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": "ec2.amazonaws.com"
+                            }
                         }
-                    }]
+                    ]
                 },
                 "Path": "/",
-                "Policies": [{
-                    "PolicyName": "DynatraceEC2CodeDeployInstanceProfilePolicy",
-                    "PolicyDocument": {
-                        "Statement": [{
-                            "Action": [
-                                "s3:Get*",
-                                "s3:List*"
-                            ],
-                            "Effect": "Allow",
-                            "Resource": "*"
-                        }]
+                "Policies": [
+                    {
+                        "PolicyName": "DynatraceEC2CodeDeployInstanceProfilePolicy",
+                        "PolicyDocument": {
+                            "Statement": [
+                                {
+                                    "Action": [
+                                        "s3:Get*",
+                                        "s3:List*"
+                                    ],
+                                    "Effect": "Allow",
+                                    "Resource": "*"
+                                }
+                            ]
+                        }
                     }
-                }]
+                ]
             }
         },
-
         "SecurityGroup": {
             "Type": "AWS::EC2::SecurityGroup",
             "Properties": {
                 "GroupDescription": "Enable HTTP access via port 80 and SSH access.",
                 "GroupName": "Dynatrace DevOps Tutorial Security Group",
-                "SecurityGroupIngress": [{
+                "SecurityGroupIngress": [
+                    {
                         "IpProtocol": "tcp",
                         "FromPort": "80",
                         "ToPort": "80",
@@ -308,28 +340,61 @@
                 ]
             }
         },
-
+        "AnsibleSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Enable HTTP access via port 80, 443 and SSH access.",
+                "GroupName": "Ansible Tower Security Group",
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "80",
+                        "ToPort": "80",
+                        "CidrIp": "0.0.0.0/0"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "443",
+                        "ToPort": "443",
+                        "CidrIp": "0.0.0.0/0"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "22",
+                        "ToPort": "22",
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                ]
+            }
+        },
         "StagingInstance": {
             "Type": "AWS::EC2::Instance",
             "Properties": {
                 "ImageId": {
-                    "Fn::FindInMap": ["RegionMap", {
-                        "Ref": "AWS::Region"
-                    }, "AMI"]
+                    "Fn::FindInMap": [
+                        "RegionMap",
+                        {
+                            "Ref": "AWS::Region"
+                        },
+                        "AMI"
+                    ]
                 },
                 "InstanceType": {
                     "Ref": "InstanceType"
                 },
                 "IamInstanceProfile": {
-                    "Ref": "DynatraceEC2InstanceProfile"
+                    "Ref": "DynatraceEC2InstanceProfile1"
                 },
                 "KeyName": {
                     "Ref": "KeyName"
                 },
-                "SecurityGroups": [{
-                    "Ref": "SecurityGroup"
-                }],
-                "Tags": [{
+                "SecurityGroups": [
+                    {
+                        "Ref": "SecurityGroup"
+                    }
+                ],
+                "Tags": [
+                    {
                         "Key": "Environment",
                         "Value": "DeployStaging"
                     },
@@ -340,74 +405,83 @@
                 ],
                 "UserData": {
                     "Fn::Base64": {
-                        "Fn::Join": ["", [
-                            "#!/bin/bash -x\n",
-                            "# First: we download and install the Dynatrace OneAgent\n",
-                            "yum update -y\n",
-                            "yum install ruby wget -y\n",
-                            "wget --no-check-certificate -O Dynatrace-OneAgent-Linux.sh \"", {
-                                "Ref": "DynatraceOneAgentURL"
-                            }, "\"\n",
-                            "sudo /bin/sh Dynatrace-OneAgent-Linux.sh APP_LOG_CONTENT_ACCESS=1\n",
-
-                            "# Second: We install required components such as httpd, nodejs, pm2\n",
-                            "yum install -y httpd\n",
-                            "curl --silent --location https://rpm.nodesource.com/setup_6.x | bash -\n",
-                            "yum -y install nodejs\n",
-                            "npm install pm2@latest -g\n",
-
-                            "# Third: to make sure Dynatrace OneAgent immediately understand these env variable we set them here and execute a quick process for them to be picked up",
-                            "cd /home/ec2-user\n",
-                            "export DT_CUSTOM_PROP=DEPLOYMENT_ID=123456 DEPLOYMENT_GROUP_NAME=GROUP_NAME APPLICATION_NAME=APP_NAME",
-                            "echo \"console.log('dummy app run');\" >> testapp.js",
-                            "pm2 start testapp.js &> pm2start.log",
-                            "pm2 stop all &> pm2stop.log",
-                            "pm2 delete all &> pm2delete.log",
-
-                            "# Third: we Install the AWS CodeDeploy Agent\n",
-                            "REGION=$(curl 169.254.169.254/latest/meta-data/placement/availability-zone/ | sed 's/[a-z]$//')\n",
-                            "cd /home/ec2-user\n",
-                            "wget https://aws-codedeploy-", {
-                                "Ref": "AWS::Region"
-                            }, ".s3.amazonaws.com/latest/install\n",
-                            "chmod +x ./install\n",
-                            "./install auto\n",
-                            
-                            "# Last: Get the latest CloudFormation package",
-                            "yum update -y aws-cfn-bootstrap",
-                            "# Start cfn-init",
-                            "/opt/aws/bin/cfn-init -s ${AWS::StackId} -r ProductionInstance --region ${AWS::Region} || error_exit 'Failed to run cfn-init'",
-                            "# Start up the cfn-hup daemon to listen for changes to the EC2 instance metadata",
-                            "/opt/aws/bin/cfn-hup || error_exit 'Failed to start cfn-hup'",
-                            "# All done so signal success",
-                            "/opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackId} --resource StagingInstance --region ${AWS::Region}"                            
-                        ]]
+                        "Fn::Join": [
+                            "",
+                            [
+                                "#!/bin/bash -x\n",
+                                "# First: we download and install the Dynatrace OneAgent\n",
+                                "yum update -y\n",
+                                "yum install ruby wget -y\n",
+                                "wget --no-check-certificate -O Dynatrace-OneAgent-Linux.sh \"",
+                                {
+                                    "Ref": "DynatraceOneAgentURL"
+                                },
+                                "\"\n",
+                                "sudo /bin/sh Dynatrace-OneAgent-Linux.sh APP_LOG_CONTENT_ACCESS=1\n",
+                                "# Second: We install required components such as httpd, nodejs, pm2\n",
+                                "yum install -y httpd\n",
+                                "curl --silent --location https://rpm.nodesource.com/setup_6.x | bash -\n",
+                                "yum -y install nodejs\n",
+                                "npm install pm2@latest -g\n",
+                                "# Third: to make sure Dynatrace OneAgent immediately understand these env variable we set them here and execute a quick process for them to be picked up",
+                                "cd /home/ec2-user\n",
+                                "export DT_CUSTOM_PROP=DEPLOYMENT_ID=123456 DEPLOYMENT_GROUP_NAME=GROUP_NAME APPLICATION_NAME=APP_NAME",
+                                "echo \"console.log('dummy app run');\" >> testapp.js",
+                                "pm2 start testapp.js &> pm2start.log",
+                                "pm2 stop all &> pm2stop.log",
+                                "pm2 delete all &> pm2delete.log",
+                                "# Third: we Install the AWS CodeDeploy Agent\n",
+                                "REGION=$(curl 169.254.169.254/latest/meta-data/placement/availability-zone/ | sed 's/[a-z]$//')\n",
+                                "cd /home/ec2-user\n",
+                                "wget https://aws-codedeploy-",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                ".s3.amazonaws.com/latest/install\n",
+                                "chmod +x ./install\n",
+                                "./install auto\n",
+                                "# Last: Get the latest CloudFormation package",
+                                "yum update -y aws-cfn-bootstrap",
+                                "# Start cfn-init",
+                                "/opt/aws/bin/cfn-init -s ${AWS::StackId} -r ProductionInstance --region ${AWS::Region} || error_exit 'Failed to run cfn-init'",
+                                "# Start up the cfn-hup daemon to listen for changes to the EC2 instance metadata",
+                                "/opt/aws/bin/cfn-hup || error_exit 'Failed to start cfn-hup'",
+                                "# All done so signal success",
+                                "/opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackId} --resource StagingInstance --region ${AWS::Region}"
+                            ]
+                        ]
                     }
                 }
             }
         },
-
         "ProductionInstance": {
             "Type": "AWS::EC2::Instance",
             "Properties": {
                 "ImageId": {
-                    "Fn::FindInMap": ["RegionMap", {
-                        "Ref": "AWS::Region"
-                    }, "AMI"]
+                    "Fn::FindInMap": [
+                        "RegionMap",
+                        {
+                            "Ref": "AWS::Region"
+                        },
+                        "AMI"
+                    ]
                 },
                 "InstanceType": {
                     "Ref": "InstanceType"
                 },
                 "IamInstanceProfile": {
-                    "Ref": "DynatraceEC2InstanceProfile"
+                    "Ref": "DynatraceEC2InstanceProfile1"
                 },
                 "KeyName": {
                     "Ref": "KeyName"
                 },
-                "SecurityGroups": [{
-                    "Ref": "SecurityGroup"
-                }],
-                "Tags": [{
+                "SecurityGroups": [
+                    {
+                        "Ref": "SecurityGroup"
+                    }
+                ],
+                "Tags": [
+                    {
                         "Key": "Environment",
                         "Value": "DeployProduction"
                     },
@@ -418,290 +492,430 @@
                 ],
                 "UserData": {
                     "Fn::Base64": {
-                        "Fn::Join": ["", [
-                            "#!/bin/bash -x\n",
-                            "# First: we download and install the Dynatrace OneAgent - TODO: Make sure you download YOUR OneAgent for your Dynatrace Tenant\n",
-                            "wget --no-check-certificate -O Dynatrace-OneAgent-Linux.sh \"", {
-                                "Ref": "DynatraceOneAgentURL"
-                            }, "\"\n",
-                            "sudo /bin/sh Dynatrace-OneAgent-Linux.sh APP_LOG_CONTENT_ACCESS=1\n",
-
-                            "# Second: we Install the AWS CodeDeploy Agent\n",
-                            "REGION=$(curl 169.254.169.254/latest/meta-data/placement/availability-zone/ | sed 's/[a-z]$//')\n",
-                            "yum update -y\n",
-                            "yum install ruby wget -y\n",
-                            "cd /home/ec2-user\n",
-                            "wget https://aws-codedeploy-", {
-                                "Ref": "AWS::Region"
-                            }, ".s3.amazonaws.com/latest/install\n",
-                            "chmod +x ./install\n",
-                            "./install auto\n",
-
-                            "# Third: We install required components such as httpd, nodejs, pm2\n",
-                            "yum install -y httpd\n",
-                            "curl --silent --location https://rpm.nodesource.com/setup_6.x | bash -\n",
-                            "yum -y install nodejs\n",
-                            "npm install pm2@latest -g\n",
-
-                            "# Last: Get the latest CloudFormation package",
-                            "yum update -y aws-cfn-bootstrap",
-                            "# Start cfn-init",
-                            "/opt/aws/bin/cfn-init -s ${AWS::StackId} -r ProductionInstance --region ${AWS::Region} || error_exit 'Failed to run cfn-init'",
-                            "# Start up the cfn-hup daemon to listen for changes to the EC2 instance metadata",
-                            "/opt/aws/bin/cfn-hup || error_exit 'Failed to start cfn-hup'",
-                            "# All done so signal success",
-                            "/opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackId} --resource ProductionInstance --region ${AWS::Region}"
-                        ]]
+                        "Fn::Join": [
+                            "",
+                            [
+                                "#!/bin/bash -x\n",
+                                "# First: we download and install the Dynatrace OneAgent - TODO: Make sure you download YOUR OneAgent for your Dynatrace Tenant\n",
+                                "wget --no-check-certificate -O Dynatrace-OneAgent-Linux.sh \"",
+                                {
+                                    "Ref": "DynatraceOneAgentURL"
+                                },
+                                "\"\n",
+                                "sudo /bin/sh Dynatrace-OneAgent-Linux.sh APP_LOG_CONTENT_ACCESS=1\n",
+                                "# Second: we Install the AWS CodeDeploy Agent\n",
+                                "REGION=$(curl 169.254.169.254/latest/meta-data/placement/availability-zone/ | sed 's/[a-z]$//')\n",
+                                "yum update -y\n",
+                                "yum install ruby wget -y\n",
+                                "cd /home/ec2-user\n",
+                                "wget https://aws-codedeploy-",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                ".s3.amazonaws.com/latest/install\n",
+                                "chmod +x ./install\n",
+                                "./install auto\n",
+                                "# Third: We install required components such as httpd, nodejs, pm2\n",
+                                "yum install -y httpd\n",
+                                "curl --silent --location https://rpm.nodesource.com/setup_6.x | bash -\n",
+                                "yum -y install nodejs\n",
+                                "npm install pm2@latest -g\n",
+                                "# Last: Get the latest CloudFormation package",
+                                "yum update -y aws-cfn-bootstrap",
+                                "# Start cfn-init",
+                                "/opt/aws/bin/cfn-init -s ${AWS::StackId} -r ProductionInstance --region ${AWS::Region} || error_exit 'Failed to run cfn-init'",
+                                "# Start up the cfn-hup daemon to listen for changes to the EC2 instance metadata",
+                                "/opt/aws/bin/cfn-hup || error_exit 'Failed to start cfn-hup'",
+                                "# All done so signal success",
+                                "/opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackId} --resource ProductionInstance --region ${AWS::Region}"
+                            ]
+                        ]
                     }
                 }
             }
         },
-
+        "AnsibleTowerInstance": {
+            "Type": "AWS::EC2::Instance",
+            "Properties": {
+                "ImageId": "ami-bc5f68d9",
+                "InstanceType": "t2.medium",
+                "IamInstanceProfile": {
+                    "Ref": "DynatraceEC2InstanceProfile1"
+                },
+                "KeyName": {
+                    "Ref": "KeyName"
+                },
+                "SecurityGroups": [
+                    {
+                        "Ref": "AnsibleSecurityGroup"
+                    }
+                ],
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "#!/bin/bash -x\n",
+                                "# enter user script\n",
+                                "# yum update\n",
+                                "yum -y install nano\n",
+                                "yum -y install wget\n",
+                                "yum -y install jq\n",
+                                "awx-manage update_password --username=admin --password=dynatrace >> /tmp/cflog.txt \n",
+                                "wget -O /tmp/license.txt --no-check-certificate https://s3.",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                ".amazonaws.com/",
+                                {
+                                    "Ref": "YourS3BucketName"
+                                },
+                                "/ansible-license.txt \n",
+                                "jq '{\"eula_accepted\":\"true\"} + .'  /tmp/license.txt > /tmp/newlicense.txt \n",  
+                                "cat /tmp/newlicense.txt >> /tmp/cflog.txt \n",
+                                "curl -X POST --header 'Authorization: Basic YWRtaW46ZHluYXRyYWNl' --header 'Content-Type: application/json' --data @/tmp/newlicense.txt http://localhost/api/v2/config/ --insecure --location -o /tmp/curllog.txt\n",
+                                "curl -X POST --header 'Authorization: Basic YWRtaW46ZHluYXRyYWNl' --header 'Content-Type: application/json' --data @/tmp/newlicense.txt http://localhost/api/v2/config/ --insecure --location -o /tmp/curllog.txt\n",
+                                " "
+                            ]
+                        ]
+                    }
+                }
+            }
+        },
         "BuildValidationRequestsDynamoDBTable": {
             "Type": "AWS::DynamoDB::Table",
             "Properties": {
                 "TableName": "BuildValidationRequests",
-                "AttributeDefinitions": [{
-                    "AttributeName": "PipelineName",
-                    "AttributeType": "S"
-                }, {
-                    "AttributeName": "Timestamp",
-                    "AttributeType": "N"
-                }],
-                "KeySchema": [{
-                    "KeyType": "HASH",
-                    "AttributeName": "PipelineName"
-                },{
-                    "KeyType": "RANGE",
-                    "AttributeName": "Timestamp"
-                }],
+                "AttributeDefinitions": [
+                    {
+                        "AttributeName": "PipelineName",
+                        "AttributeType": "S"
+                    },
+                    {
+                        "AttributeName": "Timestamp",
+                        "AttributeType": "N"
+                    }
+                ],
+                "KeySchema": [
+                    {
+                        "KeyType": "HASH",
+                        "AttributeName": "PipelineName"
+                    },
+                    {
+                        "KeyType": "RANGE",
+                        "AttributeName": "Timestamp"
+                    }
+                ],
                 "ProvisionedThroughput": {
                     "ReadCapacityUnits": 10,
                     "WriteCapacityUnits": 10
                 }
             }
         },
-
         "CodePipelineOutputBucket": {
             "Type": "AWS::S3::Bucket",
             "Properties": {
                 "BucketName": {
-                    "Fn::Join": ["-", ["codepipeline-artifacts", {
-                        "Ref": "YourS3BucketName"
-                    }]]
+                    "Fn::Join": [
+                        "-",
+                        [
+                            "codepipeline-artifacts",
+                            {
+                                "Ref": "YourS3BucketName"
+                            }
+                        ]
+                    ]
                 },
                 "VersioningConfiguration": {
                     "Status": "Enabled"
                 }
             }
         },
-
         "HandleDynatraceProblemNotificationFunction": {
             "Type": "AWS::Lambda::Function",
             "Properties": {
-                "FunctionName" : "handleDynatraceProblemNotification",
+                "FunctionName": "handleDynatraceProblemNotification",
                 "Handler": "handleDynatraceProblemNotification.handler",
-                "Role": { "Fn::GetAtt": ["DynatraceLambdaRole", "Arn"] },
+                "Role": {
+                    "Fn::GetAtt": [
+                        "DynatraceLambdaRole1",
+                        "Arn"
+                    ]
+                },
                 "Code": {
-                    "S3Bucket": { "Ref" : "YourS3BucketName" },
+                    "S3Bucket": {
+                        "Ref": "YourS3BucketName"
+                    },
                     "S3Key": "lambdas.zip"
                 },
                 "Runtime": "nodejs6.10",
                 "Timeout": "120",
                 "TracingConfig": {
                     "Mode": "PassThrough"
-                 }
+                }
             }
         },
         "GetBuildValidationResultsFunction": {
             "Type": "AWS::Lambda::Function",
             "Properties": {
-                "FunctionName" : "getBuildValidationResults",
+                "FunctionName": "getBuildValidationResults",
                 "Handler": "getBuildValidationResults.handler",
-                "Role": { "Fn::GetAtt": ["DynatraceLambdaRole", "Arn"] },
+                "Role": {
+                    "Fn::GetAtt": [
+                        "DynatraceLambdaRole1",
+                        "Arn"
+                    ]
+                },
                 "Code": {
-                    "S3Bucket": { "Ref" : "YourS3BucketName" },
+                    "S3Bucket": {
+                        "Ref": "YourS3BucketName"
+                    },
                     "S3Key": "lambdas.zip"
                 },
                 "Runtime": "nodejs6.10",
                 "Timeout": "120",
                 "TracingConfig": {
                     "Mode": "PassThrough"
-                 }
+                }
             }
         },
         "GetDynatraceBuildValidationResultsFunction": {
             "Type": "AWS::Lambda::Function",
             "Properties": {
-                "FunctionName" : "getDynatraceBuildValidationResults",
+                "FunctionName": "getDynatraceBuildValidationResults",
                 "Handler": "getDynatraceBuildValidationResults.handler",
-                "Role": { "Fn::GetAtt": ["DynatraceLambdaRole", "Arn"] },
+                "Role": {
+                    "Fn::GetAtt": [
+                        "DynatraceLambdaRole1",
+                        "Arn"
+                    ]
+                },
                 "Code": {
-                    "S3Bucket": { "Ref" : "YourS3BucketName" },
+                    "S3Bucket": {
+                        "Ref": "YourS3BucketName"
+                    },
                     "S3Key": "lambdas.zip"
                 },
                 "Runtime": "nodejs6.10",
                 "Timeout": "120",
                 "TracingConfig": {
                     "Mode": "PassThrough"
-                 }
+                }
             }
         },
         "PushDynatraceDeploymentEventFunction": {
             "Type": "AWS::Lambda::Function",
             "Properties": {
-                "FunctionName" : "pushDynatraceDeploymentEvent",
+                "FunctionName": "pushDynatraceDeploymentEvent",
                 "Handler": "pushDynatraceDeploymentEvent.handler",
-                "Role": { "Fn::GetAtt": ["DynatraceLambdaRole", "Arn"] },
+                "Role": {
+                    "Fn::GetAtt": [
+                        "DynatraceLambdaRole1",
+                        "Arn"
+                    ]
+                },
                 "Code": {
-                    "S3Bucket": { "Ref" : "YourS3BucketName" },
+                    "S3Bucket": {
+                        "Ref": "YourS3BucketName"
+                    },
                     "S3Key": "lambdas.zip"
                 },
                 "Runtime": "nodejs6.10",
                 "Timeout": "120",
                 "TracingConfig": {
                     "Mode": "PassThrough"
-                 }
+                }
             }
         },
         "RegisterDynatraceBuildValidationFunction": {
             "Type": "AWS::Lambda::Function",
             "Properties": {
-                "FunctionName" : "registerDynatraceBuildValidation",
+                "FunctionName": "registerDynatraceBuildValidation",
                 "Handler": "registerDynatraceBuildValidation.handler",
-                "Role": { "Fn::GetAtt": ["DynatraceLambdaRole", "Arn"] },
+                "Role": {
+                    "Fn::GetAtt": [
+                        "DynatraceLambdaRole1",
+                        "Arn"
+                    ]
+                },
                 "Code": {
-                    "S3Bucket": { "Ref" : "YourS3BucketName" },
+                    "S3Bucket": {
+                        "Ref": "YourS3BucketName"
+                    },
                     "S3Key": "lambdas.zip"
                 },
                 "Runtime": "nodejs6.10",
                 "Timeout": "120",
                 "TracingConfig": {
                     "Mode": "PassThrough"
-                 }
+                }
             }
         },
         "ValidateBuildDynatraceWorkerFunction": {
             "Type": "AWS::Lambda::Function",
             "Properties": {
-                "FunctionName" : "validateBuildDynatraceWorker",
+                "FunctionName": "validateBuildDynatraceWorker",
                 "Handler": "validateBuildDynatraceWorker.handler",
-                "Role": { "Fn::GetAtt": ["DynatraceLambdaRole", "Arn"] },
+                "Role": {
+                    "Fn::GetAtt": [
+                        "DynatraceLambdaRole1",
+                        "Arn"
+                    ]
+                },
                 "Code": {
-                    "S3Bucket": { "Ref" : "YourS3BucketName" },
+                    "S3Bucket": {
+                        "Ref": "YourS3BucketName"
+                    },
                     "S3Key": "lambdas.zip"
                 },
                 "Runtime": "nodejs6.10",
                 "Timeout": "120",
                 "TracingConfig": {
                     "Mode": "PassThrough"
-                 }
+                }
             }
         },
-
-
         "DeploymentGroupStaging": {
-            "DependsOn" : ["CodeDeploy"],
+            "DependsOn": [
+                "CodeDeploy"
+            ],
             "Type": "AWS::CodeDeploy::DeploymentGroup",
             "Properties": {
                 "DeploymentGroupName": "Staging",
                 "ApplicationName": "SampleDevOpsApp",
                 "DeploymentConfigName": "CodeDeployDefault.OneAtATime",
-                "Ec2TagFilters": [{
-                    "Type": "KEY_AND_VALUE",
-                    "Value": "DeployStaging",
-                    "Key": "Environment"
-                }],
+                "Ec2TagFilters": [
+                    {
+                        "Type": "KEY_AND_VALUE",
+                        "Value": "DeployStaging",
+                        "Key": "Environment"
+                    }
+                ],
                 "DeploymentStyle": {
                     "DeploymentType": "IN_PLACE",
                     "DeploymentOption": "WITHOUT_TRAFFIC_CONTROL"
                 },
                 "ServiceRoleArn": {
-                    "Fn::GetAtt": ["DynatraceCodeDeployRole", "Arn"]
+                    "Fn::GetAtt": [
+                        "DynatraceCodeDeployRole1",
+                        "Arn"
+                    ]
                 }
             }
         },
         "DeploymentGroupStagingTests": {
-            "DependsOn" : ["CodeDeploy"],
+            "DependsOn": [
+                "CodeDeploy"
+            ],
             "Type": "AWS::CodeDeploy::DeploymentGroup",
             "Properties": {
                 "DeploymentGroupName": "StagingTests",
                 "ApplicationName": "SampleDevOpsApp",
                 "DeploymentConfigName": "CodeDeployDefault.OneAtATime",
-                "Ec2TagFilters": [{
-                    "Type": "KEY_AND_VALUE",
-                    "Value": "DeployStaging",
-                    "Key": "Environment"
-                }],
+                "Ec2TagFilters": [
+                    {
+                        "Type": "KEY_AND_VALUE",
+                        "Value": "DeployStaging",
+                        "Key": "Environment"
+                    }
+                ],
                 "DeploymentStyle": {
                     "DeploymentType": "IN_PLACE",
                     "DeploymentOption": "WITHOUT_TRAFFIC_CONTROL"
                 },
                 "ServiceRoleArn": {
-                    "Fn::GetAtt": ["DynatraceCodeDeployRole", "Arn"]
+                    "Fn::GetAtt": [
+                        "DynatraceCodeDeployRole1",
+                        "Arn"
+                    ]
                 }
             }
         },
         "DeploymentGroupProduction": {
-            "DependsOn" : ["CodeDeploy"],
+            "DependsOn": [
+                "CodeDeploy"
+            ],
             "Type": "AWS::CodeDeploy::DeploymentGroup",
             "Properties": {
                 "DeploymentGroupName": "Production",
                 "ApplicationName": "SampleDevOpsApp",
                 "DeploymentConfigName": "CodeDeployDefault.OneAtATime",
-                "Ec2TagFilters": [{
-                    "Type": "KEY_AND_VALUE",
-                    "Value": "DeployProduction",
-                    "Key": "Environment"
-                }],
+                "Ec2TagFilters": [
+                    {
+                        "Type": "KEY_AND_VALUE",
+                        "Value": "DeployProduction",
+                        "Key": "Environment"
+                    }
+                ],
                 "DeploymentStyle": {
                     "DeploymentType": "IN_PLACE",
                     "DeploymentOption": "WITHOUT_TRAFFIC_CONTROL"
                 },
                 "ServiceRoleArn": {
-                    "Fn::GetAtt": ["DynatraceCodeDeployRole", "Arn"]
+                    "Fn::GetAtt": [
+                        "DynatraceCodeDeployRole1",
+                        "Arn"
+                    ]
                 }
             }
         },
         "DeploymentGroupProductionTests": {
-            "DependsOn" : ["CodeDeploy"],
+            "DependsOn": [
+                "CodeDeploy"
+            ],
             "Type": "AWS::CodeDeploy::DeploymentGroup",
             "Properties": {
                 "DeploymentGroupName": "ProductionTests",
                 "ApplicationName": "SampleDevOpsApp",
                 "DeploymentConfigName": "CodeDeployDefault.OneAtATime",
-                "Ec2TagFilters": [{
-                    "Type": "KEY_AND_VALUE",
-                    "Value": "DeployProduction",
-                    "Key": "Environment"
-                }],
+                "Ec2TagFilters": [
+                    {
+                        "Type": "KEY_AND_VALUE",
+                        "Value": "DeployProduction",
+                        "Key": "Environment"
+                    }
+                ],
                 "DeploymentStyle": {
                     "DeploymentType": "IN_PLACE",
                     "DeploymentOption": "WITHOUT_TRAFFIC_CONTROL"
                 },
                 "ServiceRoleArn": {
-                    "Fn::GetAtt": ["DynatraceCodeDeployRole", "Arn"]
+                    "Fn::GetAtt": [
+                        "DynatraceCodeDeployRole1",
+                        "Arn"
+                    ]
                 }
             }
         },
         "CodeDeploy": {
-            "DependsOn" : ["StagingInstance", "ProductionInstance"],
+            "DependsOn": [
+                "StagingInstance",
+                "ProductionInstance"
+            ],
             "Type": "AWS::CodeDeploy::Application",
             "Properties": {
                 "ApplicationName": "SampleDevOpsApp"
             }
         },
         "CodePipeline": {
-            "DependsOn": ["CodeDeploy", "CodePipelineOutputBucket"],
+            "DependsOn": [
+                "CodeDeploy",
+                "CodePipelineOutputBucket"
+            ],
             "Type": "AWS::CodePipeline::Pipeline",
             "Properties": {
-                "Name" : "SampleDevOpsPipeline",
+                "Name": "SampleDevOpsPipeline",
                 "RoleArn": {
-                    "Fn::GetAtt": ["DynatraceCodePipelineRole", "Arn"]
+                    "Fn::GetAtt": [
+                        "DynatraceCodePipelineRole1",
+                        "Arn"
+                    ]
                 },
-                "Stages": [{
+                "Stages": [
+                    {
                         "Name": "Source",
-                        "Actions": [{
+                        "Actions": [
+                            {
                                 "Name": "Source",
                                 "ActionTypeId": {
                                     "Category": "Source",
@@ -709,9 +923,11 @@
                                     "Version": "1",
                                     "Provider": "S3"
                                 },
-                                "OutputArtifacts": [{
-                                    "Name": "SampleDevOpsApp"
-                                }],
+                                "OutputArtifacts": [
+                                    {
+                                        "Name": "SampleDevOpsApp"
+                                    }
+                                ],
                                 "Configuration": {
                                     "S3Bucket": {
                                         "Ref": "YourS3BucketName"
@@ -729,9 +945,11 @@
                                     "Version": "1",
                                     "Provider": "S3"
                                 },
-                                "OutputArtifacts": [{
-                                    "Name": "SampleDevOpsAppTests"
-                                }],
+                                "OutputArtifacts": [
+                                    {
+                                        "Name": "SampleDevOpsAppTests"
+                                    }
+                                ],
                                 "Configuration": {
                                     "S3Bucket": {
                                         "Ref": "YourS3BucketName"
@@ -749,9 +967,11 @@
                                     "Version": "1",
                                     "Provider": "S3"
                                 },
-                                "OutputArtifacts": [{
-                                    "Name": "Monspec"
-                                }],
+                                "OutputArtifacts": [
+                                    {
+                                        "Name": "Monspec"
+                                    }
+                                ],
                                 "Configuration": {
                                     "S3Bucket": {
                                         "Ref": "YourS3BucketName"
@@ -765,10 +985,13 @@
                     },
                     {
                         "Name": "Staging",
-                        "Actions": [{
-                                "InputArtifacts": [{
-                                    "Name": "SampleDevOpsApp"
-                                }],
+                        "Actions": [
+                            {
+                                "InputArtifacts": [
+                                    {
+                                        "Name": "SampleDevOpsApp"
+                                    }
+                                ],
                                 "Name": "DeployInStaging",
                                 "ActionTypeId": {
                                     "Category": "Deploy",
@@ -783,9 +1006,11 @@
                                 "RunOrder": 1
                             },
                             {
-                                "InputArtifacts": [{
-                                    "Name": "SampleDevOpsAppTests"
-                                }],
+                                "InputArtifacts": [
+                                    {
+                                        "Name": "SampleDevOpsAppTests"
+                                    }
+                                ],
                                 "Name": "DeployTestsInStaging",
                                 "ActionTypeId": {
                                     "Category": "Deploy",
@@ -800,9 +1025,11 @@
                                 "RunOrder": 2
                             },
                             {
-                                "InputArtifacts": [{
-                                    "Name": "Monspec"
-                                }],
+                                "InputArtifacts": [
+                                    {
+                                        "Name": "Monspec"
+                                    }
+                                ],
                                 "Name": "PushDynatraceDeploymentEvent",
                                 "ActionTypeId": {
                                     "Category": "Invoke",
@@ -817,9 +1044,11 @@
                                 "RunOrder": 2
                             },
                             {
-                                "InputArtifacts": [{
-                                    "Name": "Monspec"
-                                }],
+                                "InputArtifacts": [
+                                    {
+                                        "Name": "Monspec"
+                                    }
+                                ],
                                 "Name": "RegisterStagingValidation",
                                 "ActionTypeId": {
                                     "Category": "Invoke",
@@ -837,23 +1066,28 @@
                     },
                     {
                         "Name": "ApproveStaging",
-                        "Actions": [{
-                            "Name": "ApproveStaging",
-                            "ActionTypeId": {
-                                "Category": "Approval",
-                                "Owner": "AWS",
-                                "Version": "1",
-                                "Provider": "Manual"
-                            },
-                            "RunOrder": 1
-                        }]
+                        "Actions": [
+                            {
+                                "Name": "ApproveStaging",
+                                "ActionTypeId": {
+                                    "Category": "Approval",
+                                    "Owner": "AWS",
+                                    "Version": "1",
+                                    "Provider": "Manual"
+                                },
+                                "RunOrder": 1
+                            }
+                        ]
                     },
                     {
                         "Name": "Production",
-                        "Actions": [{
-                                "InputArtifacts": [{
-                                    "Name": "SampleDevOpsApp"
-                                }],
+                        "Actions": [
+                            {
+                                "InputArtifacts": [
+                                    {
+                                        "Name": "SampleDevOpsApp"
+                                    }
+                                ],
                                 "Name": "DeployInProduction",
                                 "ActionTypeId": {
                                     "Category": "Deploy",
@@ -868,9 +1102,11 @@
                                 "RunOrder": 1
                             },
                             {
-                                "InputArtifacts": [{
-                                    "Name": "SampleDevOpsAppTests"
-                                }],
+                                "InputArtifacts": [
+                                    {
+                                        "Name": "SampleDevOpsAppTests"
+                                    }
+                                ],
                                 "Name": "DeployTestsInProduction",
                                 "ActionTypeId": {
                                     "Category": "Deploy",
@@ -885,9 +1121,11 @@
                                 "RunOrder": 2
                             },
                             {
-                                "InputArtifacts": [{
-                                    "Name": "Monspec"
-                                }],
+                                "InputArtifacts": [
+                                    {
+                                        "Name": "Monspec"
+                                    }
+                                ],
                                 "Name": "PushDynatraceDeploymentEvent",
                                 "ActionTypeId": {
                                     "Category": "Invoke",
@@ -902,9 +1140,11 @@
                                 "RunOrder": 2
                             },
                             {
-                                "InputArtifacts": [{
-                                    "Name": "Monspec"
-                                }],
+                                "InputArtifacts": [
+                                    {
+                                        "Name": "Monspec"
+                                    }
+                                ],
                                 "Name": "RegisterProductionValidation",
                                 "ActionTypeId": {
                                     "Category": "Invoke",
@@ -922,34 +1162,42 @@
                     },
                     {
                         "Name": "ApproveProduction",
-                        "Actions": [{
-                            "Name": "ApproveProduction",
-                            "ActionTypeId": {
-                                "Category": "Approval",
-                                "Owner": "AWS",
-                                "Version": "1",
-                                "Provider": "Manual"
-                            },
-                            "RunOrder": 1
-                        }]
+                        "Actions": [
+                            {
+                                "Name": "ApproveProduction",
+                                "ActionTypeId": {
+                                    "Category": "Approval",
+                                    "Owner": "AWS",
+                                    "Version": "1",
+                                    "Provider": "Manual"
+                                },
+                                "RunOrder": 1
+                            }
+                        ]
                     }
                 ],
                 "ArtifactStore": {
                     "Type": "S3",
                     "Location": {
-                        "Fn::Join": ["-", ["codepipeline-artifacts", {
-                            "Ref": "YourS3BucketName"
-                        }]]
+                        "Fn::Join": [
+                            "-",
+                            [
+                                "codepipeline-artifacts",
+                                {
+                                    "Ref": "YourS3BucketName"
+                                }
+                            ]
+                        ]
                     }
                 }
             }
         },
-
-
-
         "LambdaInvokePermissionGetBuildValidationResultsFunction": {
             "Type": "AWS::Lambda::Permission",
-            "DependsOn": ["GetBuildValidationResultsFunction", "BuildValidationResultsResource"],
+            "DependsOn": [
+                "GetBuildValidationResultsFunction",
+                "BuildValidationResultsResource"
+            ],
             "Properties": {
                 "FunctionName": {
                     "Fn::GetAtt": [
@@ -966,7 +1214,10 @@
         },
         "LambdaInvokePermissionHandleDynatraceProblemNotificationFunction": {
             "Type": "AWS::Lambda::Permission",
-            "DependsOn": ["HandleDynatraceProblemNotificationFunction", "HandleDynatraceProblemResource"],
+            "DependsOn": [
+                "HandleDynatraceProblemNotificationFunction",
+                "HandleDynatraceProblemResource"
+            ],
             "Properties": {
                 "FunctionName": {
                     "Fn::GetAtt": [
@@ -980,8 +1231,7 @@
                     "Fn::Sub": "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${DynatraceRestAPI}/*/*/*"
                 }
             }
-        },        
-
+        },
         "DynatraceRestAPI": {
             "Type": "AWS::ApiGateway::RestApi",
             "Properties": {
@@ -989,7 +1239,6 @@
                 "Name": "Dynatrace DevOps Data API"
             }
         },
-
         "BuildValidationResultsResource": {
             "Type": "AWS::ApiGateway::Resource",
             "Properties": {
@@ -997,12 +1246,14 @@
                     "Ref": "DynatraceRestAPI"
                 },
                 "ParentId": {
-                    "Fn::GetAtt": ["DynatraceRestAPI", "RootResourceId"]
+                    "Fn::GetAtt": [
+                        "DynatraceRestAPI",
+                        "RootResourceId"
+                    ]
                 },
                 "PathPart": "BuildValidationResults"
             }
         },
-
         "HandleDynatraceProblemResource": {
             "Type": "AWS::ApiGateway::Resource",
             "Properties": {
@@ -1010,12 +1261,14 @@
                     "Ref": "DynatraceRestAPI"
                 },
                 "ParentId": {
-                    "Fn::GetAtt": ["DynatraceRestAPI", "RootResourceId"]
+                    "Fn::GetAtt": [
+                        "DynatraceRestAPI",
+                        "RootResourceId"
+                    ]
                 },
                 "PathPart": "HandleDynatraceProblem"
             }
-        },        
-
+        },
         "BuildValidationResultsGET": {
             "Type": "AWS::ApiGateway::Method",
             "Properties": {
@@ -1029,32 +1282,45 @@
                 },
                 "AuthorizationType": "NONE",
                 "OperationName": "Get Dynatrace Build Validation Results",
-
                 "Integration": {
                     "Type": "AWS_PROXY",
                     "PassthroughBehavior": "WHEN_NO_MATCH",
-
                     "IntegrationHttpMethod": "POST",
                     "Uri": {
-                        "Fn::Join": ["", ["arn:aws:apigateway:", {
-                            "Ref": "AWS::Region"
-                        }, ":lambda:path/2015-03-31/functions/", {
-                            "Fn::GetAtt": ["GetBuildValidationResultsFunction", "Arn"]
-                        }, "/invocations"]]
+                        "Fn::Join": [
+                            "",
+                            [
+                                "arn:aws:apigateway:",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                ":lambda:path/2015-03-31/functions/",
+                                {
+                                    "Fn::GetAtt": [
+                                        "GetBuildValidationResultsFunction",
+                                        "Arn"
+                                    ]
+                                },
+                                "/invocations"
+                            ]
+                        ]
                     },
-                    "IntegrationResponses": [{
-                        "StatusCode": 200
-                    }]
+                    "IntegrationResponses": [
+                        {
+                            "StatusCode": 200
+                        }
+                    ]
                 },
-                "MethodResponses": [{
-                    "ResponseModels": {
-                        "text/html": "Empty"
-                    },
-                    "StatusCode": 200
-                }]
+                "MethodResponses": [
+                    {
+                        "ResponseModels": {
+                            "text/html": "Empty"
+                        },
+                        "StatusCode": 200
+                    }
+                ]
             }
         },
-
         "HandleDynatraceProblemPOST": {
             "Type": "AWS::ApiGateway::Method",
             "Properties": {
@@ -1068,32 +1334,45 @@
                 },
                 "AuthorizationType": "NONE",
                 "OperationName": "Handles Dynatrace Problem Notification POST Requests",
-
                 "Integration": {
                     "Type": "AWS_PROXY",
                     "PassthroughBehavior": "WHEN_NO_MATCH",
-
                     "IntegrationHttpMethod": "POST",
                     "Uri": {
-                        "Fn::Join": ["", ["arn:aws:apigateway:", {
-                            "Ref": "AWS::Region"
-                        }, ":lambda:path/2015-03-31/functions/", {
-                            "Fn::GetAtt": ["HandleDynatraceProblemNotificationFunction", "Arn"]
-                        }, "/invocations"]]
+                        "Fn::Join": [
+                            "",
+                            [
+                                "arn:aws:apigateway:",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                ":lambda:path/2015-03-31/functions/",
+                                {
+                                    "Fn::GetAtt": [
+                                        "HandleDynatraceProblemNotificationFunction",
+                                        "Arn"
+                                    ]
+                                },
+                                "/invocations"
+                            ]
+                        ]
                     },
-                    "IntegrationResponses": [{
-                        "StatusCode": 200
-                    }]
+                    "IntegrationResponses": [
+                        {
+                            "StatusCode": 200
+                        }
+                    ]
                 },
-                "MethodResponses": [{
-                    "ResponseModels": {
-                        "text/html": "Empty"
-                    },
-                    "StatusCode": 200
-                }]
+                "MethodResponses": [
+                    {
+                        "ResponseModels": {
+                            "text/html": "Empty"
+                        },
+                        "StatusCode": 200
+                    }
+                ]
             }
-        },        
-
+        },
         "RestApiDeployment": {
             "Type": "AWS::ApiGateway::Deployment",
             "Properties": {
@@ -1102,34 +1381,48 @@
                 },
                 "StageName": "v1"
             },
-            "DependsOn": ["BuildValidationResultsGET", "HandleDynatraceProblemPOST"]
+            "DependsOn": [
+                "BuildValidationResultsGET",
+                "HandleDynatraceProblemPOST"
+            ]
         },
-
         "ScheduledRule": {
             "Type": "AWS::Events::Rule",
             "Properties": {
                 "Description": "Scan for pending Dynatrace Build Validation Requests",
-                "Name" : "DynatraceBuildValidationWorkerRule",
+                "Name": "DynatraceBuildValidationWorkerRule",
                 "ScheduleExpression": "rate(2 minutes)",
                 "State": "ENABLED",
-                "Targets": [{
-                    "Arn": { "Fn::GetAtt": ["ValidateBuildDynatraceWorkerFunction", "Arn"] },
-                    "Id": "TargetFunctionV1"
-                }]
+                "Targets": [
+                    {
+                        "Arn": {
+                            "Fn::GetAtt": [
+                                "ValidateBuildDynatraceWorkerFunction",
+                                "Arn"
+                            ]
+                        },
+                        "Id": "TargetFunctionV1"
+                    }
+                ]
             }
         },
         "PermissionForEventsToInvokeLambda": {
             "Type": "AWS::Lambda::Permission",
             "Properties": {
-                "FunctionName": { "Ref": "ValidateBuildDynatraceWorkerFunction" },
+                "FunctionName": {
+                    "Ref": "ValidateBuildDynatraceWorkerFunction"
+                },
                 "Action": "lambda:InvokeFunction",
                 "Principal": "events.amazonaws.com",
-                "SourceArn": { "Fn::GetAtt": ["ScheduledRule", "Arn"] }
+                "SourceArn": {
+                    "Fn::GetAtt": [
+                        "ScheduledRule",
+                        "Arn"
+                    ]
+                }
             }
         }
-
     },
-
     "Outputs": {
         "MyStackRegion": {
             "Value": {
@@ -1139,35 +1432,68 @@
         },
         "StagingInstance": {
             "Value": {
-                "Fn::GetAtt": ["StagingInstance", "PublicDnsName"]
+                "Fn::GetAtt": [
+                    "StagingInstance",
+                    "PublicDnsName"
+                ]
             },
             "Description": "The Public DNS of your Staging System"
         },
         "ProductionInstance": {
             "Value": {
-                "Fn::GetAtt": ["ProductionInstance", "PublicDnsName"]
+                "Fn::GetAtt": [
+                    "ProductionInstance",
+                    "PublicDnsName"
+                ]
             },
             "Description": "The Public DNS of your Production System"
         },
         "DynatraceBuildReportEndpoint": {
             "Value": {
-                "Fn::Join": ["", ["https://", {
-                    "Ref": "DynatraceRestAPI"
-                }, ".execute-api.", {
-                    "Ref": "AWS::Region"
-                }, ".amazonaws.com/v1/BuildValidationResults"]]  
+                "Fn::Join": [
+                    "",
+                    [
+                        "https://",
+                        {
+                            "Ref": "DynatraceRestAPI"
+                        },
+                        ".execute-api.",
+                        {
+                            "Ref": "AWS::Region"
+                        },
+                        ".amazonaws.com/v1/BuildValidationResults"
+                    ]
+                ]
             },
             "Description": "URL to access the Build Validation Results"
         },
         "HandleDynatraceProblemEndpoint": {
             "Value": {
-                "Fn::Join": ["", ["https://", {
-                    "Ref": "DynatraceRestAPI"
-                }, ".execute-api.", {
-                    "Ref": "AWS::Region"
-                }, ".amazonaws.com/v1/HandleDynatraceProblem"]]
+                "Fn::Join": [
+                    "",
+                    [
+                        "https://",
+                        {
+                            "Ref": "DynatraceRestAPI"
+                        },
+                        ".execute-api.",
+                        {
+                            "Ref": "AWS::Region"
+                        },
+                        ".amazonaws.com/v1/HandleDynatraceProblem"
+                    ]
+                ]
             },
             "Description": "Endpoint for Integrating Dynatrace Problem Notifications"
-        }
+        },
+        "AnsibleTowerInstance": {
+            "Value": {
+                "Fn::GetAtt": [
+                    "AnsibleTowerInstance",
+                    "PublicDnsName"
+                ]
+            },
+            "Description": "The Public DNS of your Ansible Tower"
+        }        
     }
 }
