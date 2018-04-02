@@ -11,4 +11,13 @@ export DT_CLUSTER_ID="$DEPLOYMENT_GROUP_NAME $APPLICATION_NAME"
 cd /home/ec2-user
 pm2 start app.js &> pm2start.log
 echo "Deploying DEPLOYMENT_ID=$DEPLOYMENT_ID DEPLOYMENT_GROUP_NAME=$DEPLOYMENT_GROUP_NAME APPLICATION_NAME=$APPLICATION_NAME"
+
+# now lets make sure the app is really up & running - execute a couple of requests using the x-dynatrace header to identify these requests in Dynatrace as startup tests
+sleep 5;
+echo "Running a simply set of curls to validate the service is up and running"
+curl -s "http://localhost/" -H "x-dynatrace: NA=StartUp.Homepage;" -o nul &> startuptest.log
+curl -s "http://localhost/version" -H "x-dynatrace: NA=StartUp.Version;" -o nul &> startuptest.log
+curl -s "http://localhost/api/echo?text=This is from a testing script" -H "x-dynatrace: NA=StartUp.Echo;" -o nul &> startuptest.log
+curl -s "http://localhost/api/invoke?url=http://www.dynatrace.com" -H "x-dynatrace: NA=StartUp.Invoke;" -o nul &> startuptest.log
+sleep 5;
 exit 0
