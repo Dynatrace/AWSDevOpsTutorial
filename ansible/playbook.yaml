@@ -1,0 +1,45 @@
+---
+- name: rollback to previous version
+  hosts: localhost
+  vars:
+    tenantid: ton98156
+    apitoken: oIEJoD-lT9u6Cq8qCnhkv
+
+  tasks:
+    - name: impacted entities
+      set_fact:
+        impactedEntities: "{{ImpactedEntities}}"
+
+    - name: loop over entities
+      debug: "entity: {{ item }}"
+      with_items: "{{ impactedEntities }}"
+
+
+    - name: fetch custom properties
+      uri:
+        url: https://{{tenantid}}.live.dynatrace.com/api/v1/events/?entityId={{item.entity}}&eventType=CUSTOM_DEPLOYMENT&from=1522396997800&to=1$        return_content: yes
+      with_items: "{{ impactedEntities }}"
+      register: customproperties
+      ignore_errors: yes
+
+
+
+    - name: show deployment events
+      set_fact:
+        app_item: "{{item}}"
+      with_items: "{{customproperties.content | from_json | json_query('events')}}"
+      register: app_result
+
+    - name: create list
+      set_fact:
+        apps: "{{app_result.results | map(attribute='ansible_facts.app_item') | list}}"
+
+    - name: Print
+      debug: var=apps
+
+
+    - name: fetch problem
+      uri:
+        url: https://{{tenantid}}.live.dynatrace.com/api/v1/problem/details/{{ProblemID}}?Api-Token={{apitoken}}
+        return_content: yes
+      register: webpage
