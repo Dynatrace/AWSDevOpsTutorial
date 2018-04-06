@@ -578,6 +578,8 @@
                                 "yum -y install nano\n",
                                 "yum -y install wget\n",
                                 "yum -y install jq\n",
+                                "yum install python-pip\n",
+                                "pip install ansible-tower-cli\n",
                                 "awx-manage update_password --username=admin --password=dynatrace >> /tmp/cflog.txt \n",
                                 "wget -O /tmp/license.txt --no-check-certificate https://s3.",
                                 {
@@ -592,6 +594,12 @@
                                 "cat /tmp/newlicense.txt >> /tmp/cflog.txt \n",
                                 "curl -X POST --header 'Authorization: Basic YWRtaW46ZHluYXRyYWNl' --header 'Content-Type: application/json' --data @/tmp/newlicense.txt http://localhost/api/v2/config/ --insecure --location -o /tmp/curllog.txt\n",
                                 "curl -X POST --header 'Authorization: Basic YWRtaW46ZHluYXRyYWNl' --header 'Content-Type: application/json' --data @/tmp/newlicense.txt http://localhost/api/v2/config/ --insecure --location -o /tmp/curllog.txt\n",
+                                "mkdir /var/lib/awx/projects/hot\n",
+                                "wget -O /var/lib/awx/projects/hot/playbook.yaml --no-check-certificate  TODO ",
+                                "tower-cli config username admin\n",
+                                "tower-cli config password dynatrace\n",
+                                "tower-cli project create --name HOT --scm-type manual --organization Default --local-path hot \n",
+                                "tower-cli job_template create --name deployment-rollback --project HOT --playbook playbook.yaml --job-type run --credential 1 --inventory 1 \n",
                                 " "
                             ]
                         ]
