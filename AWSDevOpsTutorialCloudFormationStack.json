@@ -2,6 +2,11 @@
     "AWSTemplateFormatVersion": "2010-09-09",
     "Description": "Dynatrace AWS DevOps Workshop: For more details please check out the full tutorial on https://github.com/Dynatrace/AWSDevOpsTutorial",
     "Parameters": {
+        "DynatraceTenant": {
+            "Description": "Your Dynatrace Tenant ID.",
+            "Type": "String",
+            "Default": "YOURDYNATRACETENANT"
+        },
         "DynatraceTenantURL": {
             "Description": "Your full Dynatrace Tenant URL. For SaaS it is e.g: http://<YOURTENANTID>.live.dynatrace.com. For Managed something like https://yourserver/e/abcdefgh-1234-5678-abcd-55a7265f572f",
             "Type": "String",
@@ -51,6 +56,50 @@
             },
             "us-west-2": {
                 "AMI": "ami-f2d3638a"
+            }
+        },
+        "AnsibleRegionMap": {
+            "us-east-1": {
+                "AMI": "ami-9f1dfce2"
+            },
+            "us-east-2": {
+                "AMI": "ami-bc5f68d9"
+            },
+            "us-west-1": {
+                "AMI": "ami-1ff6fe7f"
+            },
+            "us-west-2": {
+                "AMI": "ami-5453dc2c"
+            },
+            "ca-central-1": {
+                "AMI": "ami-bdd651d9"
+            },
+            "eu-west-1": {
+                "AMI": "ami-217e0758"
+            },
+            "eu-west-2": {
+                "AMI": "ami-55f61232"
+            },
+            "eu-central-1": {
+                "AMI": "ami-31cdae5e"
+            },
+            "ap-northeast-1": {
+                "AMI": "ami-b31963d5"
+            },
+            "ap-northeast-2": {
+                "AMI": "ami-83d974ed"
+            },
+            "ap-southeast-1": {
+                "AMI": "ami-afa3edd3"
+            },
+            "ap-southeast-2": {
+                "AMI": "ami-c9c403ab"
+            },
+            "ap-south-1": {
+                "AMI": "ami-f16f339e"
+            },
+            "sa-east-1": {
+                "AMI": "ami-bf266ed3"
             }
         }
     },
@@ -554,7 +603,15 @@
         "AnsibleTowerInstance": {
             "Type": "AWS::EC2::Instance",
             "Properties": {
-                "ImageId": "ami-bc5f68d9",
+                "ImageId": {
+                    "Fn::FindInMap": [
+                        "AnsibleRegionMap", 
+                        {
+                            "Ref": "AWS::Region"
+                        },
+                        "AMI"
+                    ]
+                },
                 "InstanceType": "t2.medium",
                 "IamInstanceProfile": {
                     "Ref": "DynatraceEC2InstanceProfile1"
@@ -578,7 +635,7 @@
                                 "yum -y install nano\n",
                                 "yum -y install wget\n",
                                 "yum -y install jq\n",
-                                "yum install python-pip\n",
+                                "yum -y install python-pip\n",
                                 "pip install ansible-tower-cli\n",
                                 "awx-manage update_password --username=admin --password=dynatrace >> /tmp/cflog.txt \n",
                                 "wget -O /tmp/license.txt --no-check-certificate https://s3.",
@@ -592,15 +649,30 @@
                                 "/ansible-license.txt \n",
                                 "jq '{\"eula_accepted\":\"true\"} + .'  /tmp/license.txt > /tmp/newlicense.txt \n",  
                                 "cat /tmp/newlicense.txt >> /tmp/cflog.txt \n",
-                                "curl -X POST --header 'Authorization: Basic YWRtaW46ZHluYXRyYWNl' --header 'Content-Type: application/json' --data @/tmp/newlicense.txt http://localhost/api/v2/config/ --insecure --location -o /tmp/curllog.txt\n",
-                                "curl -X POST --header 'Authorization: Basic YWRtaW46ZHluYXRyYWNl' --header 'Content-Type: application/json' --data @/tmp/newlicense.txt http://localhost/api/v2/config/ --insecure --location -o /tmp/curllog.txt\n",
+                                "service nginx restart\n",
+                                "sleep 3\n",
+                                "curl -X POST --header \"Authorization: Basic YWRtaW46ZHluYXRyYWNl\" --header \"Content-Type: application/json\" --data @/tmp/newlicense.txt http://localhost/api/v2/config/ --insecure --location -o /tmp/curllog.txt\n",
                                 "mkdir /var/lib/awx/projects/hot\n",
-                                "wget -O /var/lib/awx/projects/hot/playbook.yaml --no-check-certificate  TODO ",
+                                "wget -O /var/lib/awx/projects/hot/playbook.yaml --no-check-certificate https://s3.",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                ".amazonaws.com/",
+                                {
+                                    "Ref": "YourS3BucketName"
+                                },
+                                "/playbook.yaml \n",
+                                "sed -i -e 's/DT_TENANT_ID/", {
+                                    "Ref": "DynatraceTenant"
+                                }, "/g' /var/lib/awx/projects/hot/playbook.yaml \n",
+                                "sed -i -e 's/DT_TENANT_TOKEN/", {
+                                    "Ref": "DynatraceAPIToken"
+                                }, "/g' /var/lib/awx/projects/hot/playbook.yaml \n",
                                 "tower-cli config username admin\n",
                                 "tower-cli config password dynatrace\n",
                                 "tower-cli project create --name HOT --scm-type manual --organization Default --local-path hot \n",
-                                "tower-cli job_template create --name deployment-rollback --project HOT --playbook playbook.yaml --job-type run --credential 1 --inventory 1 \n",
-                                " "
+                                "tower-cli job_template create --name deployment-rollback --project HOT --playbook playbook.yaml --job-type run --credential 1 --inventory 1 --ask-variables-on-launch true \n"
+                                
                             ]
                         ]
                     }

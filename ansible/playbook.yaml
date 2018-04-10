@@ -2,8 +2,8 @@
 - name: rollback to previous version
   hosts: localhost
   vars:
-    tenantid: ton98156
-    apitoken: oIEJoD-lT9u6Cq8qCnhkv
+    tenantid: DT_TENANT_ID
+    apitoken: DT_TENANT_TOKEN
     now: "{{ ansible_date_time.epoch|int * 1000}}"
     past: "{{ now|int - 7200000 }}" # 1h = 3600000   24h = 86400000
     payload: "{'State':'{{ State }}', 'ProblemID':'{{ ProblemID }}', 'ProblemTitle':'{{ ProblemTitle }}', 'ImpactedEntities':{{ ImpactedEntities }} }"
