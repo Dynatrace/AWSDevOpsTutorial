@@ -17,7 +17,7 @@ exports.handler = (event, context, callback) => {
         body: ""
     };
 
-    if(!event.body || !event.body.startsWith("{")) {
+    if(!event.body || !event.body.trim().startsWith("{")) {
         response.body = "Method expects a Dynatrace Problem Notification Lambda Object in the Post Body";
         callback(null, response);
         return;
@@ -44,7 +44,8 @@ exports.handler = (event, context, callback) => {
         callback(null, response);
         return;
     }
-    
+
+    // looks like we have all the data we need - now lets see what we can do with it!    
     dtApiUtils.dtApiInit(function(err,data) {
         
         var impactedEntities = [];
@@ -74,7 +75,16 @@ exports.handler = (event, context, callback) => {
                 });
             }
             
+            // respond to the lambda call 
             console.log(err + data);
+            if(err) {
+                response.statusCode = 400;
+                response.body = err;
+            } else {
+                response.statusCode = 200;
+                response.body = "Executed Handler successfully!";
+            }
+            callback(null, response);
         });
     });
 };
@@ -120,38 +130,47 @@ var deployPreviousRevisions = function(mostRecentEventsWithDeployData, index, ca
     var codedeploy = new AWS.CodeDeploy();
     
     var deployEventWithDeployData = mostRecentEventsWithDeployData[index];
-    
-    var params = {
-        applicationName : deployEventWithDeployData.CodeDeploy.deploymentInfo.applicationName,
-        deploymentConfigName :  deployEventWithDeployData.CodeDeploy.deploymentInfo.deploymentConfigName,
-        deploymentGroupName :  deployEventWithDeployData.CodeDeploy.deploymentInfo.deploymentGroupName,
-        description : "Automatic Deployment from Dynatrace Remediation Action. Previous Deployment " + deployEventWithDeployData.CodeDeploy.deploymentInfo.deploymentId + " caused a problem",
-        revision :  deployEventWithDeployData.CodeDeploy.deploymentInfo.previousRevision
-    }
-    
-    console.log("CodeDeploy Info: " + JSON.stringify(deployEventWithDeployData.CodeDeploy));
-    console.log("Lets deploy: " + JSON.stringify(params));
-    
-    deployEventWithDeployData.CodeDeployResponse = "Created new Deployment: ";
-    callback(null, mostRecentEventsWithDeployData);
-    
-    codedeploy.createDeployment(params, function(err, data) {
-        if(err) {
-            deployEventWithDeployData.CodeDeployResponse = err;
-            console.log("createDeployment failed: " + err);
-        } else {
-            deployEventWithDeployData.CodeDeployResponse = "Created new Deployment: " + data.deploymentId;
-            console.log("createDeployment succeeded: " + data.deploymentId);
+    if(deployEventWithDeployData != null) {
+        var params = {
+            applicationName : deployEventWithDeployData.CodeDeploy.deploymentInfo.applicationName,
+            deploymentConfigName :  deployEventWithDeployData.CodeDeploy.deploymentInfo.deploymentConfigName,
+            deploymentGroupName :  deployEventWithDeployData.CodeDeploy.deploymentInfo.deploymentGroupName,
+            description : "Automatic Deployment from Dynatrace Remediation Action. Previous Deployment " + deployEventWithDeployData.CodeDeploy.deploymentInfo.deploymentId + " caused a problem",
+            revision :  deployEventWithDeployData.CodeDeploy.deploymentInfo.previousRevision
         }
         
+        console.log("CodeDeploy Info: " + JSON.stringify(deployEventWithDeployData.CodeDeploy));
+        console.log("Lets deploy: " + JSON.stringify(params));
+        
+        deployEventWithDeployData.CodeDeployResponse = "Created new Deployment: ";
+        callback(null, mostRecentEventsWithDeployData);
+        
+        codedeploy.createDeployment(params, function(err, data) {
+            if(err) {
+                deployEventWithDeployData.CodeDeployResponse = err;
+                console.log("createDeployment failed: " + err);
+            } else {
+                deployEventWithDeployData.CodeDeployResponse = "Created new Deployment: " + data.deploymentId;
+                console.log("createDeployment succeeded: " + data.deploymentId);
+            }
+            
+            // call ourself recursively if we have more work - otherwise call callback
+            index++;
+            if(index < mostRecentEventsWithDeployData.length) {
+                deployPreviousRevisions(mostRecentEventsWithDeployData, index, callback);
+            } else {
+                callback(null, mostRecentEventsWithDeployData);
+            }
+        });
+    } else {
         // call ourself recursively if we have more work - otherwise call callback
         index++;
         if(index < mostRecentEventsWithDeployData.length) {
             deployPreviousRevisions(mostRecentEventsWithDeployData, index, callback);
         } else {
             callback(null, mostRecentEventsWithDeployData);
-        }
-    });
+        }        
+    }
 }
 
 /**
@@ -162,21 +181,30 @@ var findCodeDeployDeploymentInformation = function(mostRecentEvents, index, call
     var codedeploy = new AWS.CodeDeploy();
     
     var event = mostRecentEvents[index];
-    codedeploy.getDeployment({deploymentId : event.customProperties["CodeDeploy.DeploymentId"]}, function(err, data) {
-        // lets see if there is a rollback deployment
+    if((event != null) && event.customProperties) {
+        codedeploy.getDeployment({deploymentId : event.customProperties["CodeDeploy.DeploymentId"]}, function(err, data) {
+            // lets see if there is a rollback deployment
 
-        // "previousRevision":{"revisionType":"S3","s3Location":{"bucket":"codepipeline-artifacts-agrabner-dynatracedevops","key":"SampleDevOpsPipeline/SampleDevO/075Icjq.zip","bundleType":"zip","version":"0tUa9GFNfLmnTA0l8oEejg4ODg.9sDzH","eTag":"9ae34d4b55ab28340ade5875173cb20f"}}
-        console.log("Previous Revision: " + data.previousRevision);
+            // "previousRevision":{"revisionType":"S3","s3Location":{"bucket":"codepipeline-artifacts-agrabner-dynatracedevops","key":"SampleDevOpsPipeline/SampleDevO/075Icjq.zip","bundleType":"zip","version":"0tUa9GFNfLmnTA0l8oEejg4ODg.9sDzH","eTag":"9ae34d4b55ab28340ade5875173cb20f"}}
+            console.log("Previous Revision: " + data.previousRevision);
+            
+            event.CodeDeploy = data;
         
-        event.CodeDeploy = data;
-       
+            index++;
+            if(index < mostRecentEvents.length) {
+                findCodeDeployDeploymentInformation(mostRecentEvents, index, callback);
+            } else {
+                callback(null, null);
+            }
+        });
+    } else {
         index++;
         if(index < mostRecentEvents.length) {
             findCodeDeployDeploymentInformation(mostRecentEvents, index, callback);
         } else {
             callback(null, null);
         }
-    });
+    }
 }
 
 /**
