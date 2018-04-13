@@ -37,11 +37,33 @@
                 "t2.medium"
             ]
         },
+        "UseAnsibleTower": {
+            "Description": "Whether to use Ansible Tower for auto-remediaton or not",
+            "Type": "String",
+            "Default": "yes",
+            "AllowedValues": [
+                "yes",
+                "no"
+            ]
+        },
+        "UseAnsibleTowerInstanceType": {
+            "Description": "Instance Types for the EC2 Instances for Ansible Tower",
+            "Type": "String",
+            "Default": "t2.medium",
+            "AllowedValues": [
+                "t2.small",
+                "t2.medium",
+                "m3.medium"
+            ]
+        },
         "YourS3BucketName": {
             "Description": "The name of your S3 Bucket where you uploaded your Dynatrace AWS DevOps Tutorial Material. Suggested name is <yourname>-dynatracedevops",
             "Type": "String",
             "Default": "<YOURNAME>-dynatracedevops"
         }
+    },
+    "Conditions": {
+        "CreateAnsibleInstance" : {"Fn::Equals" : [{"Ref" : "UseAnsibleTower"}, "yes"]}
     },
     "Mappings": {
         "RegionMap": {
@@ -408,6 +430,7 @@
         },
         "AnsibleSecurityGroup": {
             "Type": "AWS::EC2::SecurityGroup",
+            "Condition": "CreateAnsibleInstance",
             "Properties": {
                 "GroupDescription": "Enable HTTP access via port 80, 443 and SSH access.",
                 "GroupName": "Ansible Tower Security Group",
@@ -602,6 +625,7 @@
         },
         "AnsibleTowerInstance": {
             "Type": "AWS::EC2::Instance",
+            "Condition": "CreateAnsibleInstance",
             "Properties": {
                 "ImageId": {
                     "Fn::FindInMap": [
@@ -612,7 +636,9 @@
                         "AMI"
                     ]
                 },
-                "InstanceType": "t2.medium",
+                "InstanceType":{
+                    "Ref": "UseAnsibleTowerInstanceType"
+                },
                 "IamInstanceProfile": {
                     "Ref": "DynatraceEC2InstanceProfile1"
                 },
@@ -624,6 +650,12 @@
                         "Ref": "AnsibleSecurityGroup"
                     }
                 ],
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "AnsibleTower"
+                    }
+                ],
                 "UserData": {
                     "Fn::Base64": {
                         "Fn::Join": [
@@ -631,9 +663,16 @@
                             [
                                 "#!/bin/bash -x\n",
                                 "# enter user script\n",
-                                "# yum update\n",
+                                "# yum -y update\n",
                                 "yum -y install nano\n",
                                 "yum -y install wget\n",
+                                "# INSTALL DYNATRACE ONEAGENT\n",
+                                "wget --no-check-certificate -O Dynatrace-OneAgent-Linux.sh \"",
+                                {
+                                    "Ref": "DynatraceOneAgentURL"
+                                },
+                                "\"\n",
+                                "sudo /bin/sh Dynatrace-OneAgent-Linux.sh APP_LOG_CONTENT_ACCESS=1\n",
                                 "yum -y install jq\n",
                                 "yum -y install python-pip\n",
                                 "pip install ansible-tower-cli\n",
@@ -650,8 +689,8 @@
                                 "jq '{\"eula_accepted\":\"true\"} + .'  /tmp/license.txt > /tmp/newlicense.txt \n",  
                                 "cat /tmp/newlicense.txt >> /tmp/cflog.txt \n",
                                 "service nginx restart\n",
-                                "sleep 3\n",
-                                "curl -X POST --header \"Authorization: Basic YWRtaW46ZHluYXRyYWNl\" --header \"Content-Type: application/json\" --data @/tmp/newlicense.txt http://localhost/api/v2/config/ --insecure --location -o /tmp/curllog.txt\n",
+                                "sleep 5\n",
+                                "curl -X POST --header \"Authorization: Basic YWRtaW46ZHluYXRyYWNl\" --header \"Content-Type: application/json\" --data @/tmp/newlicense.txt http://localhost/api/v2/config/ --insecure --location --retry 5 -o /tmp/curllog.txt\n",
                                 "mkdir /var/lib/awx/projects/hot\n",
                                 "wget -O /var/lib/awx/projects/hot/playbook.yaml --no-check-certificate https://s3.",
                                 {
@@ -665,7 +704,7 @@
                                 "sed -i -e 's/DT_TENANT_ID/", {
                                     "Ref": "DynatraceTenant"
                                 }, "/g' /var/lib/awx/projects/hot/playbook.yaml \n",
-                                "sed -i -e 's/DT_TENANT_TOKEN/", {
+                                "sed -i -e 's/DT_API_TOKEN/", {
                                     "Ref": "DynatraceAPIToken"
                                 }, "/g' /var/lib/awx/projects/hot/playbook.yaml \n",
                                 "tower-cli config username admin\n",
@@ -1584,6 +1623,7 @@
             "Description": "Endpoint for Integrating Dynatrace Problem Notifications"
         },
         "AnsibleTowerInstance": {
+            "Condition": "CreateAnsibleInstance",
             "Value": {
                 "Fn::GetAtt": [
                     "AnsibleTowerInstance",
@@ -1591,6 +1631,25 @@
                 ]
             },
             "Description": "The Public DNS of your Ansible Tower"
+        }, 
+        "AnsibleTowerAPIUrl": {
+            "Condition": "CreateAnsibleInstance",
+            "Value": {
+                "Fn::Join":[
+                    "",
+                    [
+                        "https://",
+                        { 
+                            "Fn::GetAtt": [
+                                "AnsibleTowerInstance",
+                                "PublicDnsName"
+                            ]
+                        },
+                        "/api/v2/job_templates/7/launch/"
+                    ]
+                ]
+            },
+            "Description": "Endpoint for calling predefined playbook in Ansible Tower"
         }        
     }
 }

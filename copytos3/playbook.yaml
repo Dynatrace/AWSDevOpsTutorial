@@ -1,0 +1,73 @@
+---
+- name: rollback to previous version
+  hosts: localhost
+  vars:
+    tenantid: ton98156
+    apitoken: oIEJoD-lT9u6Cq8qCnhkv
+    now: "{{ ansible_date_time.epoch|int * 1000}}"
+    past: "{{ now|int - 86400000 }}" # 1h = 3600000   24h = 86400000
+    commentuser: "Ansible Playbook"
+    dtcommentapiurl: "https://{{tenantid}}.live.dynatrace.com/api/v1/problem/details/{{PID}}/comments?Api-Token={{apitoken}}"
+
+  tasks:
+    #- debug: var=vars
+
+    - name: push comment to dynatrace
+      uri:
+        url: "{{dtcommentapiurl}}"
+        method: POST
+        body_format: json
+        body: "{ \"comment\": \"Remediation playbook started.\", \"user\": \"{{commentuser}}\", \"context\": \"Ansible Tower\" }"
+
+
+    - name: impacted entities
+      set_fact:
+        impactedEntities: "{{ImpactedEntities}}"
+
+    - name: loop over entities
+      debug: "entity: {{ item }}"
+      with_items: "{{ impactedEntities }}"
+
+    - name: fetch custom deployment events
+      uri:
+        url: https://{{tenantid}}.live.dynatrace.com/api/v1/events/?entityId={{item.entity}}&eventType=CUSTOM_DEPLOYMENT&from={{past}}&to={{now}}&Api-Token={{apitoken}}
+        return_content: yes
+      with_items: "{{ impactedEntities }}"
+      register: customproperties
+      ignore_errors: no
+
+    - name: parse deployment events
+      set_fact:
+        deployment_events: "{{item.json.events}}"
+      with_items: "{{ customproperties.results }}"
+      register: app_result
+
+    - name: get most recent deployment
+      set_fact:
+        myItem: "{{ deployment_events | first }}"
+
+    - name: call remediation action
+      uri:
+        url: "{{ myItem.remediationAction }}"
+        method: POST
+        body_format: json
+        body: "{{ vars | to_json }}"
+        return_content: yes
+      ignore_errors: yes
+      register: result
+
+   - name: push success comment to dynatrace
+      uri:
+        url: "{{dtcommentapiurl}}"
+        method: POST
+        body_format: json
+        body: "{ \"comment\": \"Remediation playbook successfully executed: {{result.json.message}}\", \"user\": \"{{commentuser}}\", \"context\": \"Ansible Tower\" }"
+      when: result.status == 200
+
+    - name: push error comment to dynatrace
+      uri:
+        url: "{{dtcommentapiurl}}"
+        method: POST
+        body_format: json
+        body: "{ \"comment\": \"Remediation playbook not run successfully: {{result.json.message}}\", \"user\": \"{{commentuser}}\", \"context\": \"Ansible Tower\" }"
+      when: result.status != 200
