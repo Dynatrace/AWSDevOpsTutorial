@@ -38,7 +38,7 @@
             ]
         },
         "UseAnsibleTower": {
-            "Description": "Whether to use Ansible Tower for auto-remediaton or not",
+            "Description": "Whether to deploy Ansible Tower for auto-remediation or not",
             "Type": "String",
             "Default": "yes",
             "AllowedValues": [
@@ -46,8 +46,8 @@
                 "no"
             ]
         },
-        "UseAnsibleTowerInstanceType": {
-            "Description": "Instance Types for the EC2 Instances for Ansible Tower",
+        "AnsibleTowerInstanceType": {
+            "Description": "Instance Types for the EC2 Instances for Ansible Tower. Recommendation: t2.medium or m3.medium",
             "Type": "String",
             "Default": "t2.medium",
             "AllowedValues": [
@@ -60,6 +60,28 @@
             "Description": "The name of your S3 Bucket where you uploaded your Dynatrace AWS DevOps Tutorial Material. Suggested name is <yourname>-dynatracedevops",
             "Type": "String",
             "Default": "<YOURNAME>-dynatracedevops"
+        }
+    },
+    "Metadata": {
+        "AWS::CloudFormation::Interface": {
+            "ParameterGroups": [
+                {
+                "Label": { "default": "Dynatrace"},
+                "Parameters": [ "DynatraceTenant", "DynatraceTenantURL", "DynatraceAPIToken", "DynatraceAPIToken", "DynatraceOneAgentURL" ]
+                },
+                {
+                    "Label": {"default": "Deployment"},
+                    "Parameters": ["InstanceType", "KeyName", "YourS3BucketName"]
+                },
+                {
+                    "Label": {"default": "Ansible Tower"},
+                    "Parameters": ["UseAnsibleTower", "AnsibleTowerInstanceType"]
+                }
+            ],
+            "ParameterLabels": {
+                "YourS3BucketName": {"default": "Name of your S3 Bucket"},
+                "UseAnsibleTower": {"default": "Do you want to deploy Ansible Tower?"}
+            }
         }
     },
     "Conditions": {
@@ -637,7 +659,7 @@
                     ]
                 },
                 "InstanceType":{
-                    "Ref": "UseAnsibleTowerInstanceType"
+                    "Ref": "AnsibleTowerInstanceType"
                 },
                 "IamInstanceProfile": {
                     "Ref": "DynatraceEC2InstanceProfile1"
@@ -691,8 +713,8 @@
                                 "service nginx restart\n",
                                 "sleep 5\n",
                                 "curl -X POST --header \"Authorization: Basic YWRtaW46ZHluYXRyYWNl\" --header \"Content-Type: application/json\" --data @/tmp/newlicense.txt http://localhost/api/v2/config/ --insecure --location --retry 5 -o /tmp/curllog.txt\n",
-                                "mkdir /var/lib/awx/projects/hot\n",
-                                "wget -O /var/lib/awx/projects/hot/playbook.yaml --no-check-certificate https://s3.",
+                                "mkdir /var/lib/awx/projects/unbreakable\n",
+                                "wget -O /var/lib/awx/projects/unbreakable/playbook.yaml --no-check-certificate https://s3.",
                                 {
                                     "Ref": "AWS::Region"
                                 },
@@ -703,14 +725,14 @@
                                 "/playbook.yaml \n",
                                 "sed -i -e 's/DT_TENANT_ID/", {
                                     "Ref": "DynatraceTenant"
-                                }, "/g' /var/lib/awx/projects/hot/playbook.yaml \n",
+                                }, "/g' /var/lib/awx/projects/unbreakable/playbook.yaml \n",
                                 "sed -i -e 's/DT_API_TOKEN/", {
                                     "Ref": "DynatraceAPIToken"
-                                }, "/g' /var/lib/awx/projects/hot/playbook.yaml \n",
+                                }, "/g' /var/lib/awx/projects/unbreakable/playbook.yaml \n",
                                 "tower-cli config username admin\n",
                                 "tower-cli config password dynatrace\n",
-                                "tower-cli project create --name HOT --scm-type manual --organization Default --local-path hot \n",
-                                "tower-cli job_template create --name deployment-rollback --project HOT --playbook playbook.yaml --job-type run --credential 1 --inventory 1 --ask-variables-on-launch true \n"
+                                "tower-cli project create --name Unbreakable --scm-type manual --organization Default --local-path unbreakable \n",
+                                "tower-cli job_template create --name deployment-rollback --project Unbreakable --playbook playbook.yaml --job-type run --credential 1 --inventory 1 --ask-variables-on-launch true \n"
                                 
                             ]
                         ]
@@ -1650,6 +1672,25 @@
                 ]
             },
             "Description": "Endpoint for calling predefined playbook in Ansible Tower"
-        }        
+        },
+        "AnsibleTowerJobTemplateUrl": {
+            "Condition": "CreateAnsibleInstance",
+            "Value": {
+                "Fn::Join":[
+                    "",
+                    [
+                        "https://",
+                        { 
+                            "Fn::GetAtt": [
+                                "AnsibleTowerInstance",
+                                "PublicDnsName"
+                            ]
+                        },
+                        "/#/templates/job_template/7"
+                    ]
+                ]
+            },
+            "Description": "Endpoint for calling predefined playbook in Ansible Tower"
+        }       
     }
 }
