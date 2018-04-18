@@ -16,13 +16,6 @@ You can also [download the slides I used](https://github.com/Dynatrace/AWSDevOps
 
 **Lets get this party started:** Before we launch the CloudFormation stack which will create all required resources (EC2 Instances, Lambdas, CodeDeploy, CodePipeline, API Gateway) lets make sure we have all pre-requisites covered!
 
-## Table of Contents
-1. Cloudformation Template
-1. Pipeline
-1. Automated Approvals
-1. [Self-Healing](#selfhealing)
-1. Optional Remarks
-
 
 ## Pre-Requisits
 1. You need an AWS account. If you don't have one [get one here](https://aws.amazon.com/)
@@ -295,10 +288,12 @@ The GitHub repo contains a directory called appbuilds_readytodeploy. In this dir
 If you want to deploy a build simply take one of these zip files, rename it app.zip and upload it to your S3Bucket where you initially uploaded the app.zip file. Overwrite the existing version.
 Now go to your AWS CodePipeline and click on "Release Change". That's it!
 
-## 4 Lets implement Self-Healing through Dynatrace and AWS Lambda<a name="selfhealing"></a>
+## 4 Lets implement Self-Healing through Dynatrace and AWS Lambda
 
 Last step in our tutorial is to automate handling a problem in production. Besides doing our Production Approval stage where we compare key metrics against a previous timeframe, Dynatrace provides a much smarter way to detect production problems. Dynatrace baselines every single metric for us, it also keeps an eye on critical log messages, end user behavior and infrastructure issues. In case a problem comes up that impacts our end users or service endpoints a new Problem Ticket gets created. The following ticket is an example if you deploy a bad build. Dynatrace automatically detects that something is wrong with our production service:
+
 ![](./images/problemdetection1.png)
+
 Clicking on the details shows us how and when Dynatrace detected that problem:
 ![](./images/problemdetection2.png)
 
@@ -310,10 +305,13 @@ Every time a problem ticket is opened Dynatrace can notify external tools, e.g: 
 In Dynatrace we can now configure our Problem Notification Integration to always call that endpoint in case a problem is detected. But instead of pushing ALL problems to this endpoint we can configure a so called "Alerting Profile" which allows us to only notify in case certain events happen on certain entities. In our case we only want to push Problems that happen in our Production Environment to this endpoint. In Dynatrace go to Settings - Alerting - Alerting Profiles and lets create a new Profile called ProductionService. In that profile we are only interested in Error, Slowdown and Custom Alerts for those entities that have the DeploymentGroup:Production tag on it. So - thats our services that are deployed by CodeDeploy and where that environment variable is passed:
 ![](./images/alertingprofile1.png)
 
+For triggering the self-healing process, you can now choose between two different options.
+Option 1 discusses self-healing with AWS, while Option 2 explains how to use and integrate Ansible Tower for self-healing.
+
 ### Option 1: Self-Healing with AWS Lambda
 
 **Problem Notification with AWS Lambda**
-No that we have our Alerting Profile we can go ahead and actually setup the integration. In Dynatrace go to Settings - Integration - Problem notification. Click on "Set up notifications" and select "Custom Integration".
+Now that we have our Alerting Profile we can go ahead and actually setup the integration. In Dynatrace go to Settings - Integration - Problem notification. Click on "Set up notifications" and select "Custom Integration".
 Configure your integration as shown in the next screenshot. Give it a meaningful name. Then put in your HandleDynatraceProblem endpoint and click on Test Notification to test it out:
 ![](./images/problemnotificationlambda1.png)
 
@@ -331,6 +329,51 @@ Here is a Problem with a comment from the Lambda function indicating that a prev
 
 While we can use AWS Lambda for auto-remediation purposes, we can also make use of [Ansible](https://www.ansible.com/), which is an automation platform suitable for application deployment, configuration management and orchestration. In our case, we leverage the power of Ansible to automatically run playbooks defined for auto-remediation. In our demo, we are using [Ansible Tower](https://www.ansible.com/products/tower) which provides a REST-API and a web-based UI on top of Ansible. 
 
+### Dynatrace Problem Notification
+Each time Dynatrace detects a problem, i.e., an issue which affects several users, not only a problem is created in Dynatrace, but also a problem notification ca be sent out to third-party tools. In our case we want to inform Ansible Tower about the problem to trigger counteractions.  
+Therefore, we use the previously set up Alerting Profile and set up the integration with Ansible Tower. In Dynatrace go to Settings - Integration - Problem notifications. 
+Click on "Set up notifications" and select "Ansible Tower".
+Copy the URL from your Ansible Tower job template screen (or the CloudFormation output section) to the corresponding input field. Enter your username and password and insert the following text into the custom message input field:
+
+```
+{ "State":"{State}", "ProblemID":"{ProblemID}", "PID":"{PID}", "ProblemTitle":"{ProblemTitle}", "ImpactedEntities": {ImpactedEntities} }
+```
+
+Finally, select the previously defined Alerting Profile. Before you can save the Problem Notification you first have to send a test notification. Once successful, you can save.
+
+![Ansible Tower Problem Notification Integration](./images/problemnotificationansible1.png)
+
+#### Self-Healing Ansible Playbook
+
+After setting up the integration, now each time Dynatrace detects a problem, the according playbook configured in the job template is triggered via the REST-API and executed.
+The playbook itself consists of several "tasks", i.e., a list of instructions that are executed. In our demo example, the following tasks are defined and executed each time the playbook is triggered:
+
+1. A comment is sent to Dynatrace containing the information that the remediation playbook has started. This is mainly for documentation reasons and will help DevOps to fully understand what was going on at which point in time and how the problem has been solved automatically.
+1. The arguments sent along the REST call are stored in internal variables.
+1. The playbook iterates over all impacted entities and fetches the custom deployment events.
+1. The fetched deployment events are parsed and necessary information is extracted.
+1. The most recent deployment is selected.
+1. The remediation action that is defined for the most recent deployment is called.
+1. A success/error comment is pushed to Dynatrace, again to provide full visibility in the automated process.
+
+The full source code of the playbook can be found in `copytos3/playbook.yaml`. 
+
+
+#### Inspect Job Template
+
+
+Ansible Tower comes with a web interface to inspect, create and organize your projects, inventories and playbooks. Let's now have a look into the set up of our Ansible Tower instance. Therefore, navigate to the Ansible Tower URL (see your CloudFormation output) login with the predefined credentials (user = admin, password = dynatrace).
+You will see that there is already a project "Unbreakable" defined for this tutorial. 
+
+![Ansible Tower Job Template](./images/problemnotificationansible2.png)
+
+
+#### Replay Self-Healing in Ansible Tower
+
+To inspect the discussed execution of the playbook, select the "Jobs" tab. Here you can find all previously exectued or currently running jobs and can get detailed information about them.
+Click on the last execution of the "deployment-rollback" playbook and your output should be similar to the one in the screenshot:
+ 
+![Ansible Tower Job Template](./images/problemnotificationansible3.png)
 
 
 
