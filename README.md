@@ -33,20 +33,21 @@ As we are going to use AWS CodeDeploy, AWS CodePipeline, AWS Lambda, DynamoDB, A
 1.1. To learn more about Key Pairs and how to connect to EC2 Instances for troubleshooting read [Connect to your Linux Instance](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/AccessingInstances.html)
 2. Create a S3 Bucket with the naming scheme: <yourname>-dynatracedevops and enable versioning. See following screenshots for reference
 ![](./images/preparation_creates3bucket.png)
-3. Copy the content from the folder "copytos3" to your newly created S3 bucket. This includes the application package, tests, monspec as well as all Lambda functions
+3. Copy the content from the folder "copytos3" to your newly created S3 bucket. This includes the application package, tests, monspec, Ansible Tower license, Ansible playbook as well as all Lambda functions
 ![](./images/preparation_copytos3.png)
 - TODO: update image: with license and playbook file
 
 **Dynatrace**
 
 We need a couple of things to launch the CloudFormation Template
-1. Your *Dynatrace Tenant URL*: For SaaS that would be something like http://<yourtenant>.live.dynatrace.com. For Managed it would be http://<yourserver>/e/<your-env-id>
-2. Your *Dynatrace OneAgent for Linux Download URL*: Go to Deploy Dynatrace -> Start Installation -> Linux and copy the URL within the quotes as shown below:
+1. Your *Dynatrace Tenant ID*
+2. Your *Dynatrace Tenant URL*: For SaaS that would be something like http://`<yourtenant>`.live.dynatrace.com. For Managed it would be http://`<yourserver>`/e/`<your-env-id>`
+3. Your *Dynatrace OneAgent for Linux Download URL*: Go to Deploy Dynatrace -> Start Installation -> Linux and copy the URL within the quotes as shown below:
 ![](./images/preparation_dynatraceoneagenturl.png)
-3. A *Dynatrace API Token*: Go to Settings -> Integration -> Dynatrace API and create a new Token
+4. A *Dynatrace API Token*: Go to Settings -> Integration -> Dynatrace API and create a new Token
 ![](./images/preparation_dynatraceapitoken.png)
 
-**(optional)Setup Dynatrace AWS CloudWatch Monitoring)**
+**(optional) Setup Dynatrace AWS CloudWatch Monitoring**
 
 Dynatrace has a built-in feature to pull in metrics and metadata (e.g: tags ) from CloudWatch. You can setup this integration as explained in the documentation: [How do I start Amazon Web Services monitoring?](https://www.dynatrace.com/support/help/cloud-platforms/amazon-web-services/how-do-i-start-amazon-web-services-monitoring/)
 
@@ -74,8 +75,6 @@ Region | Launch Template
 ### Step 2: Define all your input parameters
 ![](./images/createstack_step2.png)
 
-- TODO update screenshot
-
 ### Step 3: Click through all other wizard steps. Confirm the box and click CREATE
 ![](./images/createstack_step3.png)
 
@@ -86,14 +85,11 @@ Region | Launch Template
 There is a lot of useful information here, e.g: the PublicDNS of the two EC2 Instances that got created and the links to the Public API Gateway we created that allows us to execute some Lambda functions.
 ![](./images/createstack_step5.png)
 
-- TODO: hint for Ansible Tower
 
 ## Lets explore what has been created
 Several things have been created.
 
 ### 2 EC2 Instances: Automatically monitored with Dynatrace
-
-- TODO hint for ansible
 
 The stack created two EC2 Instances. One for Staging, one that we use for Production. Go to your EC2 Section in the AWS Console and explore them:
 ![](./images/createstack_ec2check1.png)
@@ -120,8 +116,9 @@ pm2 start testapp.js &> pm2start.log
 
 Lets move to Dynatrace and validate that these two EC2 machines are actually monitored. In your Dynatrace Web UI simply go to Hosts - you should see 2 new hosts. If you have the [Dynatrace AWS CloudWatch](https://www.dynatrace.com/support/help/cloud-platforms/amazon-web-services/how-do-i-start-amazon-web-services-monitoring/) integration setup the host name should reflect the actual names Staging and Production. Otherwise it will show up the unique EC2 Instance Name:
 ![](./images/createstack_dynatracehostlist1.png)
+
 **Sanity Check:** 
-If you don't see these two hosts it means something went wrong with the OneAgent installation. Most likely root cause is that you didn't use the correct OneAgent Download Link when creating the CloudFormation stack. In that case. Delete the stack and start all over. Double check that you really copy the correct *Download Link*, *Tenant URL* and *API Token*!
+If you don't see these two hosts (or three in case you also deployed Ansible Tower) it means something went wrong with the OneAgent installation. Most likely root cause is that you didn't use the correct OneAgent Download Link when creating the CloudFormation stack. In that case. Delete the stack and start all over. Double check that you really copy the correct *Download Link*, *Tenant URL* and *API Token*!
 
 When clicking on one of these hosts you can also see that Dynatrace alread does FullStack monitoring of that host. Depending on how far the CodePipeline (that also executed in the background) already executed you may or may not see some additional Node.js processes here. As long as you start seeing any data here you are good :-)
 ![](./images/createstack_dynatracehost1.png)
@@ -327,36 +324,30 @@ Here is a Problem with a comment from the Lambda function indicating that a prev
 
 ### Option 2: Self-Healing with Ansible Tower
 
-While we can use AWS Lambda for auto-remediation purposes, we can also make use of [Ansible](https://www.ansible.com/), which is an automation platform suitable for application deployment, configuration management and orchestration. In our case, we leverage the power of Ansible to automatically run playbooks defined for auto-remediation. In our demo, we are using [Ansible Tower](https://www.ansible.com/products/tower) which provides a REST-API and a web-based UI on top of Ansible. 
+While we can use AWS Lambda for auto-remediation purposes, we can also make use of [Ansible](https://www.ansible.com/), which is an automation platform suitable for application deployment, configuration management and orchestration. We can also leverage the power of Ansible to automatically run playbooks defined for auto-remediation. In our demo, we are using [Ansible Tower](https://www.ansible.com/products/tower) which provides a REST-API and a web-based UI on top of Ansible for easier management and enhanced capabilities. 
 
 ### Dynatrace Problem Notification
-Each time Dynatrace detects a problem, i.e., an issue which affects several users, not only a problem is created in Dynatrace, but also a problem notification ca be sent out to third-party tools. In our case we want to inform Ansible Tower about the problem to trigger counteractions.  
-Therefore, we use the previously set up Alerting Profile and set up the integration with Ansible Tower. In Dynatrace go to Settings - Integration - Problem notifications. 
+Each time Dynatrace detects a problem, i.e., an issue which affects several users, not only a problem is created in Dynatrace, but also a problem notification can be sent out to third-party tools. In our case we want to inform Ansible Tower about the problem in order to trigger counteractions. Therefore, we use the previously set up Alerting Profile and set up the integration with Ansible Tower. In Dynatrace go to Settings - Integration - Problem notifications. 
 Click on "Set up notifications" and select "Ansible Tower".
-Copy the URL from your Ansible Tower job template screen (or the CloudFormation output section) to the corresponding input field. Enter your username and password and insert the following text into the custom message input field:
-
-```
-{ "State":"{State}", "ProblemID":"{ProblemID}", "PID":"{PID}", "ProblemTitle":"{ProblemTitle}", "ImpactedEntities": {ImpactedEntities} }
-```
-
+Copy the URL from your Ansible Tower job template screen (or the CloudFormation output section) to the corresponding input field. Enter your username and password (user = admin, password = dynatrace) of your Ansible Tower installation. 
+You can leave the "Custom Message" input field empty, since the integration already sends all needed problem information along with the notification.
 Finally, select the previously defined Alerting Profile. Before you can save the Problem Notification you first have to send a test notification. Once successful, you can save.
 
 ![Ansible Tower Problem Notification Integration](./images/problemnotificationansible1.png)
 
 #### Self-Healing Ansible Playbook
 
-After setting up the integration, now each time Dynatrace detects a problem, the according playbook configured in the job template is triggered via the REST-API and executed.
+After setting up the integration, now each time Dynatrace detects a problem a notification to Ansible Tower is sent, where the according playbook configured in the job template is triggered and executed.
 The playbook itself consists of several "tasks", i.e., a list of instructions that are executed. In our demo example, the following tasks are defined and executed each time the playbook is triggered:
 
 1. A comment is sent to Dynatrace containing the information that the remediation playbook has started. This is mainly for documentation reasons and will help DevOps to fully understand what was going on at which point in time and how the problem has been solved automatically.
-1. The arguments sent along the REST call are stored in internal variables.
 1. The playbook iterates over all impacted entities and fetches the custom deployment events.
 1. The fetched deployment events are parsed and necessary information is extracted.
 1. The most recent deployment is selected.
-1. The remediation action that is defined for the most recent deployment is called.
+1. The remediation action that is defined for the most recent deployment is called and the problem details are sent as payload.
 1. A success/error comment is pushed to Dynatrace, again to provide full visibility in the automated process.
 
-The full source code of the playbook can be found in `copytos3/playbook.yaml`. 
+The full source code of the playbook can be found in `./copytos3/playbook.yaml`. 
 
 
 #### Inspect Job Template
@@ -373,7 +364,7 @@ You will see that there is already a project "Unbreakable" defined for this tuto
 To inspect the discussed execution of the playbook, select the "Jobs" tab. Here you can find all previously exectued or currently running jobs and can get detailed information about them.
 Click on the last execution of the "deployment-rollback" playbook and your output should be similar to the one in the screenshot:
  
-![Ansible Tower Job Template](./images/problemnotificationansible3.png)
+![Ansible Tower Job Details](./images/problemnotificationansible3.png)
 
 
 
