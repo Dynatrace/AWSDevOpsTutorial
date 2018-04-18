@@ -94,7 +94,7 @@ exports.handler = (event, context, callback) => {
  * If there are it also gets the CodeDeploy Deployment Information and the latest revision. If there was a prevousRevision we also create a new Deployment for that revision
  * If so the callback receives the information about these events and also the information about the new CodeDeploys and the CodeDeployReponse
  * 
- * @param {Array}  entites
+ * @param {Array}  entities
  *  list of Dynatrace Entities
  * @param {Number} timespan
  *  timespan in milliseconds that we have to go back in time from NOW()

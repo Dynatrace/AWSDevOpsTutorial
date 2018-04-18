@@ -16,10 +16,12 @@ You can also [download the slides I used](https://github.com/Dynatrace/AWSDevOps
 
 **Lets get this party started:** Before we launch the CloudFormation stack which will create all required resources (EC2 Instances, Lambdas, CodeDeploy, CodePipeline, API Gateway) lets make sure we have all pre-requisites covered!
 
+
 ## Pre-Requisits
 1. You need an AWS account. If you don't have one [get one here](https://aws.amazon.com/)
-2. You need a Dynatrace Account. Get your [Free SaaS Trial here!](http://bit.ly/dtsaastrial)
-3. You need to clone or copy the content of this GitHub repo to your local disk!
+1. You need a Dynatrace Account. Get your [Free SaaS Trial here!](http://bit.ly/dtsaastrial)
+1. Optional: In case you want to use Ansible as automation platform, you need a license for Ansible Tower. [Get your license here.](https://www.ansible.com/license)
+1. You need to clone or copy the content of this GitHub repo to your local disk!
 
 ## Preparation
 
@@ -31,19 +33,21 @@ As we are going to use AWS CodeDeploy, AWS CodePipeline, AWS Lambda, DynamoDB, A
 1.1. To learn more about Key Pairs and how to connect to EC2 Instances for troubleshooting read [Connect to your Linux Instance](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/AccessingInstances.html)
 2. Create a S3 Bucket with the naming scheme: <yourname>-dynatracedevops and enable versioning. See following screenshots for reference
 ![](./images/preparation_creates3bucket.png)
-3. Copy the content from the folder "copytos3" to your newly created S3 bucket. This includes the application package, tests, monspec as well as all Lambda functions
+3. Copy the content from the folder "copytos3" to your newly created S3 bucket. This includes the application package, tests, monspec, Ansible Tower license, Ansible playbook as well as all Lambda functions
 ![](./images/preparation_copytos3.png)
+- TODO: update image: with license and playbook file
 
 **Dynatrace**
 
 We need a couple of things to launch the CloudFormation Template
-1. Your *Dynatrace Tenant URL*: For SaaS that would be something like http://<yourtenant>.live.dynatrace.com. For Managed it would be http://<yourserver>/e/<your-env-id>
-2. Your *Dynatrace OneAgent for Linux Download URL*: Go to Deploy Dynatrace -> Start Installation -> Linux and copy the URL within the quotes as shown below:
+1. Your *Dynatrace Tenant ID*
+2. Your *Dynatrace Tenant URL*: For SaaS that would be something like http://`<yourtenant>`.live.dynatrace.com. For Managed it would be http://`<yourserver>`/e/`<your-env-id>`
+3. Your *Dynatrace OneAgent for Linux Download URL*: Go to Deploy Dynatrace -> Start Installation -> Linux and copy the URL within the quotes as shown below:
 ![](./images/preparation_dynatraceoneagenturl.png)
-3. A *Dynatrace API Token*: Go to Settings -> Integration -> Dynatrace API and create a new Token
+4. A *Dynatrace API Token*: Go to Settings -> Integration -> Dynatrace API and create a new Token
 ![](./images/preparation_dynatraceapitoken.png)
 
-**(optional)Setup Dynatrace AWS CloudWatch Monitoring)**
+**(optional) Setup Dynatrace AWS CloudWatch Monitoring**
 
 Dynatrace has a built-in feature to pull in metrics and metadata (e.g: tags ) from CloudWatch. You can setup this integration as explained in the documentation: [How do I start Amazon Web Services monitoring?](https://www.dynatrace.com/support/help/cloud-platforms/amazon-web-services/how-do-i-start-amazon-web-services-monitoring/)
 
@@ -81,6 +85,7 @@ Region | Launch Template
 There is a lot of useful information here, e.g: the PublicDNS of the two EC2 Instances that got created and the links to the Public API Gateway we created that allows us to execute some Lambda functions.
 ![](./images/createstack_step5.png)
 
+
 ## Lets explore what has been created
 Several things have been created.
 
@@ -111,8 +116,9 @@ pm2 start testapp.js &> pm2start.log
 
 Lets move to Dynatrace and validate that these two EC2 machines are actually monitored. In your Dynatrace Web UI simply go to Hosts - you should see 2 new hosts. If you have the [Dynatrace AWS CloudWatch](https://www.dynatrace.com/support/help/cloud-platforms/amazon-web-services/how-do-i-start-amazon-web-services-monitoring/) integration setup the host name should reflect the actual names Staging and Production. Otherwise it will show up the unique EC2 Instance Name:
 ![](./images/createstack_dynatracehostlist1.png)
+
 **Sanity Check:** 
-If you don't see these two hosts it means something went wrong with the OneAgent installation. Most likely root cause is that you didn't use the correct OneAgent Download Link when creating the CloudFormation stack. In that case. Delete the stack and start all over. Double check that you really copy the correct *Download Link*, *Tenant URL* and *API Token*!
+If you don't see these two hosts (or three in case you also deployed Ansible Tower) it means something went wrong with the OneAgent installation. Most likely root cause is that you didn't use the correct OneAgent Download Link when creating the CloudFormation stack. In that case. Delete the stack and start all over. Double check that you really copy the correct *Download Link*, *Tenant URL* and *API Token*!
 
 When clicking on one of these hosts you can also see that Dynatrace alread does FullStack monitoring of that host. Depending on how far the CodePipeline (that also executed in the background) already executed you may or may not see some additional Node.js processes here. As long as you start seeing any data here you are good :-)
 ![](./images/createstack_dynatracehost1.png)
@@ -279,29 +285,36 @@ The GitHub repo contains a directory called appbuilds_readytodeploy. In this dir
 If you want to deploy a build simply take one of these zip files, rename it app.zip and upload it to your S3Bucket where you initially uploaded the app.zip file. Overwrite the existing version.
 Now go to your AWS CodePipeline and click on "Release Change". That's it!
 
-## 4. Lets implement Self-Healing through Dynatrace and AWS Lambda
+## 4 Lets implement Self-Healing through Dynatrace and AWS Lambda
 
 Last step in our tutorial is to automate handling a problem in production. Besides doing our Production Approval stage where we compare key metrics against a previous timeframe, Dynatrace provides a much smarter way to detect production problems. Dynatrace baselines every single metric for us, it also keeps an eye on critical log messages, end user behavior and infrastructure issues. In case a problem comes up that impacts our end users or service endpoints a new Problem Ticket gets created. The following ticket is an example if you deploy a bad build. Dynatrace automatically detects that something is wrong with our production service:
+
 ![](./images/problemdetection1.png)
+
 Clicking on the details shows us how and when Dynatrace detected that problem:
 ![](./images/problemdetection2.png)
 
 ### Dynatrace Problem Notification
 
-Every time a problem ticket is opened Dynatrace can notify external tools, e.g: ServiceNow, PagerDuty, xMatters, JIRA, AWS API Gateways, ... about this problem. For our purposes we can let Dynatrace call an AWS Lambda function that we expose through a public API Gateway. Our CloudFormation Stack already created that endpoint for us. Go back to your CloudFormation Output list and find the link for the output *HandleDynatraceProblemEndpoint*. It shoudl be something like: https://abcdefgh.execute-api.us-west-2.amazonaws.com/v1/HandleDynatraceProblem
+Every time a problem ticket is opened Dynatrace can notify external tools, e.g: ServiceNow, PagerDuty, xMatters, JIRA, AWS API Gateways, ... about this problem. For our purposes we can let Dynatrace call an AWS Lambda function that we expose through a public API Gateway. Our CloudFormation Stack already created that endpoint for us. Go back to your CloudFormation Output list and find the link for the output *HandleDynatraceProblemEndpoint*. It should be something like: https://abcdefgh.execute-api.us-west-2.amazonaws.com/v1/HandleDynatraceProblem
 
 **Alerting Profiles**
 In Dynatrace we can now configure our Problem Notification Integration to always call that endpoint in case a problem is detected. But instead of pushing ALL problems to this endpoint we can configure a so called "Alerting Profile" which allows us to only notify in case certain events happen on certain entities. In our case we only want to push Problems that happen in our Production Environment to this endpoint. In Dynatrace go to Settings - Alerting - Alerting Profiles and lets create a new Profile called ProductionService. In that profile we are only interested in Error, Slowdown and Custom Alerts for those entities that have the DeploymentGroup:Production tag on it. So - thats our services that are deployed by CodeDeploy and where that environment variable is passed:
 ![](./images/alertingprofile1.png)
 
+For triggering the self-healing process, you can now choose between two different options.
+Option 1 discusses self-healing with AWS, while Option 2 explains how to use and integrate Ansible Tower for self-healing.
+
+### Option 1: Self-Healing with AWS Lambda
+
 **Problem Notification with AWS Lambda**
-No that we have our Alerting Profile we can go ahead and actually setup the integration. In Dynatrace go to Settings - Integration - Problem notification. Click on "Set up notifications" and select "Custom Integration".
+Now that we have our Alerting Profile we can go ahead and actually setup the integration. In Dynatrace go to Settings - Integration - Problem notification. Click on "Set up notifications" and select "Custom Integration".
 Configure your integration as shown in the next screenshot. Give it a meaningful name. Then put in your HandleDynatraceProblem endpoint and click on Test Notification to test it out:
 ![](./images/problemnotificationlambda1.png)
 
 AND THAT'S IT - seriously! :-)
 
-### Self-Healing AWS Lambda Function
+#### Self-Healing AWS Lambda Function
 
 Now - what is this AWS Lambda function actual doing?
 *handleDynatraceProblemNotification*: This lambda functions queries the Dynatrace Problem REST API to capture more data about the impacted entities. In case the Problem was detected on an Entity where an AWS CodeDeploy Deployment was logged as a Deployment Event the function will figure out the previous AWS CodeDeploy Revision and initiate a deployment of that revision. This should then bring the system back into its previous state!
@@ -309,11 +322,61 @@ Now - what is this AWS Lambda function actual doing?
 Here is a Problem with a comment from the Lambda function indicating that a previous revision was deployed:
 ![](./images/autoremediation_commentonproblemticket.png)
 
+### Option 2: Self-Healing with Ansible Tower
+
+While we can use AWS Lambda for auto-remediation purposes, we can also make use of [Ansible](https://www.ansible.com/), which is an automation platform suitable for application deployment, configuration management and orchestration. We can also leverage the power of Ansible to automatically run playbooks defined for auto-remediation. In our demo, we are using [Ansible Tower](https://www.ansible.com/products/tower) which provides a REST-API and a web-based UI on top of Ansible for easier management and enhanced capabilities. 
+
+#### Dynatrace Problem Notification
+Each time Dynatrace detects a problem, i.e., an issue which affects several users, not only a problem is created in Dynatrace, but also a problem notification can be sent out to third-party tools. In our case we want to inform Ansible Tower about the problem in order to trigger counteractions. Therefore, we use the previously set up Alerting Profile and set up the integration with Ansible Tower. In Dynatrace go to Settings - Integration - Problem notifications. 
+Click on "Set up notifications" and select "Ansible Tower".
+Copy the URL from your Ansible Tower job template screen (or the CloudFormation output section) to the corresponding input field. Enter your username and password (user = admin, password = dynatrace) of your Ansible Tower installation. 
+You can leave the "Custom Message" input field empty, since the integration already sends all needed problem information along with the notification.
+Finally, select the previously defined Alerting Profile. Before you can save the Problem Notification you first have to send a test notification. Once successful, you can save.
+
+![Ansible Tower Problem Notification Integration](./images/problemnotificationansible1.png)
+
+#### Self-Healing Ansible Playbook
+
+After setting up the integration, now each time Dynatrace detects a problem a notification to Ansible Tower is sent, where the according playbook configured in the job template is triggered and executed.
+The playbook itself consists of several "tasks", i.e., a list of instructions that are executed. In our demo example, the following tasks are defined and executed each time the playbook is triggered:
+
+1. A comment is sent to Dynatrace containing the information that the remediation playbook has started. This is mainly for documentation reasons and will help DevOps to fully understand what was going on at which point in time and how the problem has been solved automatically.
+1. The playbook iterates over all impacted entities and fetches the custom deployment events.
+1. The fetched deployment events are parsed and necessary information is extracted.
+1. The most recent deployment is selected.
+1. The remediation action that is defined for the most recent deployment is called and the problem details are sent as payload.
+1. A success/error comment is pushed to Dynatrace, again to provide full visibility in the automated process.
+
+The full source code of the playbook can be found in `./copytos3/playbook.yaml`. 
+
+
+#### Inspect Job Template
+
+
+Ansible Tower comes with a web interface to inspect, create and organize your projects, inventories and playbooks. Let's now have a look into the set up of our Ansible Tower instance. Therefore, navigate to the Ansible Tower URL (see your CloudFormation output) login with the predefined credentials (user = admin, password = dynatrace).
+You will see that there is already a project "Unbreakable" defined for this tutorial. 
+
+![Ansible Tower Job Template](./images/problemnotificationansible2.png)
+
+
+#### Replay Self-Healing in Ansible Tower
+
+To inspect the discussed execution of the playbook, select the "Jobs" tab. Here you can find all previously exectued or currently running jobs and can get detailed information about them.
+Click on the last execution of the "deployment-rollback" playbook and your output should be similar to the one in the screenshot:
+ 
+![Ansible Tower Job Details](./images/problemnotificationansible3.png)
+
+
+
+### Remarks on Self-Healing and Auto-Remediation
 
 If you want to learn more about Self-Healing and Auto-Remediation I suggest you check out some of our material online. Deploying a previous revision is obviously just one easy remediation action. We could query the Dynatrace Timeseries API to figure out what else is going on in the system and e.g: scale up EC2 instances in case of traffic peaks or stop/promote BLUE/GREEN deployments in case we detect problems with one or the other version:
 * [Blog: Auto-Mitigation with Dynatrace AI – or shall we call it Self-Healing?](https://www.dynatrace.com/blog/auto-mitigation-with-dynatrace-ai-or-shall-we-call-it-self-healing/)
 * [YouTube Self-Healing Demo with our Lab Team: Auto-Scaling and Restarting Sevices](https://www.youtube.com/watch?v=0zlCxVEf8pk&list=PLqt2rd0eew1YFx9m8dBFSiGYSBcDuWG38&index=18)
 * [Blog: Top Problems Detected and how to Auto-Mitigate them](https://www.dynatrace.com/blog/applying-dynatrace-ai-into-our-digital-performance-life-best-of-december-2017/)
+* [Blog on Ansible.com: Enable self-healing applications with Ansible and Dynatrace](https://www.ansible.com/blog/enable-self-healing-applications-with-ansible-and-dynatrace)
+* [Blog: Set-up Ansible Tower and connect it to Dynatrace](https://www.dynatrace.com/news/blog/set-up-ansible-tower-with-dynatrace-to-enable-your-self-healing-applications/)
+
 
 ## 5. Optional Steps
 
@@ -321,7 +384,7 @@ There are a couple of additional things we can do to make this even better
 
 ### Automated Service Naming Rules
 
-While Dynatrace automatically detects our services and gives them a proper name we end up having the same service name multiple times - one per environment. In order to get better default naming we can create a so called "Service naming rule". In the Dynatrace Web UI go to Settings -> Service naming rules and create a new custom rule just as I have done here:
+While Dynatrace automatically detects our services and gives them a proper name we end up having the same service name multiple times - one per environment. In order to get better default naming we can create a so called "Service naming rule". In the Dynatrace Web UI go to Settings -> Server-side service monitoring -> Service naming rules and create a new custom rule just as I have done here:
 ![](./images/servicenaming_ruleconfig1.png)
 
 Here is how I configured my name rule:
