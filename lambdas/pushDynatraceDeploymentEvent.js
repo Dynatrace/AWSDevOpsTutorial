@@ -37,7 +37,32 @@ exports.handler = function(event, context, callback) {
         console.log(JSON.stringify(context));
         
         try {
-        
+
+            // This block is for testing purposes ONLY!        
+            /* if(true) {
+                console.log("testrun2");
+                
+                // get our global confiugration via env
+                var postedData = {}
+                postedData.dtApiToken = dtApiUtils.getDtApiToken();
+                postedData.dtTenantURL = dtApiUtils.getDtTenantUrl();
+                postedData.attachRules = { "tagRule" : []};
+                postedData.eventType == "CUSTOM_ANNOTATION";
+            
+                // seems we have our mandatory fields - now lets construct that REST API Call
+                var dtEventUrl = postedData.dtTenantURL + "/api/v1/events";
+                var event = {
+                    "start" : Date.now().toString(),
+                    "end" : Date.now().toString(),
+                    "source" : postedData.source ? postedData.source : "Dynatrace AWS Lambda",
+                    "eventType" : postedData.eventType,
+                    "attachRules" : postedData.attachRules
+                }
+                
+                // lets log our call to Dynatrace    
+                doPostWithRetry(dtEventUrl, postedData, event, "1", context, 5, 1000);
+            }
+            else*/ 
             // lets check if called from CodePipeline
             if(event["CodePipeline.job"]) {
                 var job = event["CodePipeline.job"];
@@ -204,6 +229,21 @@ var postEventToDynatraceApi = function(postedData, codePipelineJobId, context) {
     }
     
     // lets log our call to Dynatrace    
+    doPostWithRetry(dtEventUrl, postedData, event, codePipelineJobId, context, 5, 1000); 
+}
+
+/**
+ * Actually does the call to the dynatrace event push api with a built in retry capability to overcome delayed tagging
+ * @param {*} dtEventUrl 
+ * @param {*} postedData 
+ * @param {*} event 
+ * @param {*} context 
+ * @param {*} retryCount 
+ * @param {*} waitForRetry 
+ */
+var doPostWithRetry = function(dtEventUrl, postedData, event, codePipelineJobId, context, retryCount, waitForRetry) {
+    console.log("doPostWithRetry: " + retryCount);
+    // lets log our call to Dynatrace    
     dtApiUtils.dtApiPost(dtEventUrl, postedData.dtApiToken, event, function(statuscode, response) {
         if(statuscode == 200) {
             cputils.reportSuccess("Successfully sent event to Dynatrace", codePipelineJobId, context);
@@ -216,12 +256,20 @@ var postEventToDynatraceApi = function(postedData, codePipelineJobId, context) {
             if(response.startsWith("{")) {
                 var responseObject = JSON.parse(response);
                 if(responseObject.error && responseObject.error.message.includes("No MEIdentifier do match")) {
-                    cputils.reportError("Failed to push Dynatrace Deployment Event!\nNO Entities found that match your Tags: + " + JSON.stringify(postedData.attachRules) + "\n\nDouble check your tag configuration in monspec or in Dynatrace!", codePipelineJobId, context)
-                    return;
+                    // SPECIAL HANDLING: the first time an entity gets deployed it may take up to 60s until all tags that are applied via rules got applied. We therefore add a little retry here
+                    if(retryCount > 0) {
+                        console.log("Handling No MEIdentifier do match: retryCount=" + retryCount);
+                        retryCount--;
+                        setTimeout(doPostWithRetry, waitForRetry, dtEventUrl, postedData, event, codePipelineJobId, context, retryCount, waitForRetry);
+                        return;
+                    } else {
+                        cputils.reportError("Failed to push Dynatrace Deployment Event!\nNO Entities found that match your Tags: + " + JSON.stringify(postedData.attachRules) + "\n\nDouble check your tag configuration in monspec or in Dynatrace!", codePipelineJobId, context)
+                        return;
+                    }
                 }
             }
         }
         
         cputils.reportError("Failed to send event to Dynatrace: " + response, codePipelineJobId, context);
-    });    
+    });
 }
