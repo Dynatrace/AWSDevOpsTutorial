@@ -326,7 +326,7 @@ Here is a Problem with a comment from the Lambda function indicating that a prev
 
 While we can use AWS Lambda for auto-remediation purposes, we can also make use of [Ansible](https://www.ansible.com/), which is an automation platform suitable for application deployment, configuration management and orchestration. We can also leverage the power of Ansible to automatically run playbooks defined for auto-remediation. In our demo, we are using [Ansible Tower](https://www.ansible.com/products/tower) which provides a REST-API and a web-based UI on top of Ansible for easier management and enhanced capabilities. 
 
-### Dynatrace Problem Notification
+#### Dynatrace Problem Notification
 Each time Dynatrace detects a problem, i.e., an issue which affects several users, not only a problem is created in Dynatrace, but also a problem notification can be sent out to third-party tools. In our case we want to inform Ansible Tower about the problem in order to trigger counteractions. Therefore, we use the previously set up Alerting Profile and set up the integration with Ansible Tower. In Dynatrace go to Settings - Integration - Problem notifications. 
 Click on "Set up notifications" and select "Ansible Tower".
 Copy the URL from your Ansible Tower job template screen (or the CloudFormation output section) to the corresponding input field. Enter your username and password (user = admin, password = dynatrace) of your Ansible Tower installation. 
