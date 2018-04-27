@@ -20,7 +20,7 @@ You can also [download the slides I used](https://github.com/Dynatrace/AWSDevOps
 ## Pre-Requisits
 1. You need an AWS account. If you don't have one [get one here](https://aws.amazon.com/)
 1. You need a Dynatrace Account. Get your [Free SaaS Trial here!](http://bit.ly/dtsaastrial)
-1. Optional: In case you want to use Ansible as automation platform, you need a license for Ansible Tower. [Get your license here.](https://www.ansible.com/license)
+1. Optional: In case you want to use Ansible as automation platform, you need a license for Ansible Tower. [Get your license here.](https://www.ansible.com/workshop-license)
 1. You need to clone or copy the content of this GitHub repo to your local disk!
 
 ## Preparation
