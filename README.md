@@ -17,7 +17,7 @@ You can also [download the slides I used](https://github.com/Dynatrace/AWSDevOps
 **Lets get this party started:** Before we launch the CloudFormation stack which will create all required resources (EC2 Instances, Lambdas, CodeDeploy, CodePipeline, API Gateway) lets make sure we have all pre-requisites covered!
 
 
-## Pre-Requisits
+## Pre-Requisites
 1. You need an AWS account. If you don't have one [get one here](https://aws.amazon.com/)
 1. You need a Dynatrace Account. Get your [Free SaaS Trial here!](http://bit.ly/dtsaastrial)
 1. Optional: In case you want to use Ansible as automation platform, you need a license for Ansible Tower. [Get your license here.](https://www.ansible.com/workshop-license)
@@ -40,7 +40,7 @@ As we are going to use AWS CodeDeploy, AWS CodePipeline, AWS Lambda, DynamoDB, A
 
 We need a couple of things to launch the CloudFormation Template
 1. Your *Dynatrace Tenant ID*
-2. Your *Dynatrace Tenant URL*: For SaaS that would be something like http://`<yourtenant>`.live.dynatrace.com. For Managed it would be http://`<yourserver>`/e/`<your-env-id>`
+2. Your *Dynatrace Tenant URL*: For SaaS that would be something like `http://<yourtenant>.live.dynatrace.com`. For Managed it would be http://`<yourserver>/e/<your-env-id>`
 3. Your *Dynatrace OneAgent for Linux Download URL*: Go to Deploy Dynatrace -> Start Installation -> Linux and copy the URL within the quotes as shown below:
 ![](./images/preparation_dynatraceoneagenturl.png)
 4. A *Dynatrace API Token*: Go to Settings -> Integration -> Dynatrace API and create a new Token
@@ -520,4 +520,5 @@ Here are several snippets of this monspec file that should explain how it works:
 ## 6. Summary - Next Steps
 I hope you enjoyed that tutorial and you saw the value of adding Dynatrace into your DevOps Pipeline. We discussed a couple of concepts on how to leverage the Automation API, Automated Tagging and Baselining to implement concepts such as Shift-Left and Self-Healing.
 There is more that can be done. If you want to learn more check out my YouTube Channel on [Dynatrace FullStack Performance Clinics](http://bit.ly/oneagenttutorials)
+
 If you have any further questions don't hesitate to ask!

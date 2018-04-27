@@ -229,7 +229,7 @@ var postEventToDynatraceApi = function(postedData, codePipelineJobId, context) {
     }
     
     // lets log our call to Dynatrace    
-    doPostWithRetry(dtEventUrl, postedData, event, codePipelineJobId, context, 5, 1000); 
+    doPostWithRetry(dtEventUrl, postedData, event, codePipelineJobId, context, 5, 5000); 
 }
 
 /**

@@ -68,8 +68,8 @@ exports.handler = (event, context, callback) => {
                 }
                 
                 var fullUrl = dtApiUtils.getDtTenantUrl() + "/api/v1/problem/details/" + notificationObject.PID + "/comments";
-                console.log("Comment URL: "+ fullUrl);
-                console.log("Comment Body: " + JSON.stringify(commentBody));
+                // console.log("Comment URL: "+ fullUrl);
+                // console.log("Comment Body: " + JSON.stringify(commentBody));
                 dtApiUtils.dtApiPost(fullUrl, dtApiUtils.getDtApiToken(), commentBody, function(statusCode, data) {
                     console.log("Push Comment to Dynatrace: " + fullUrl + " " + statusCode + "-" + data);
                 });
@@ -142,26 +142,36 @@ var deployPreviousRevisions = function(mostRecentEventsWithDeployData, index, ca
         console.log("CodeDeploy Info: " + JSON.stringify(deployEventWithDeployData.CodeDeploy));
         console.log("Lets deploy: " + JSON.stringify(params));
         
-        deployEventWithDeployData.CodeDeployResponse = "Created new Deployment: ";
-        callback(null, mostRecentEventsWithDeployData);
-        
-        codedeploy.createDeployment(params, function(err, data) {
-            if(err) {
-                deployEventWithDeployData.CodeDeployResponse = err;
-                console.log("createDeployment failed: " + err);
-            } else {
-                deployEventWithDeployData.CodeDeployResponse = "Created new Deployment: " + data.deploymentId;
-                console.log("createDeployment succeeded: " + data.deploymentId);
-            }
-            
-            // call ourself recursively if we have more work - otherwise call callback
-            index++;
+        // lets validate we have a validate revision!
+        if(params.revision == null) {
+            deployEventWithDeployData.CodeDeployResponse = "COULDNT find previous CodeDeploy Deployment! No rollback possible";
+            console.log("createDeployment failed: COULDNT find previous CodeDeploy Deployment!");
             if(index < mostRecentEventsWithDeployData.length) {
                 deployPreviousRevisions(mostRecentEventsWithDeployData, index, callback);
             } else {
                 callback(null, mostRecentEventsWithDeployData);
             }
-        });
+        }
+        else { 
+            // now lets deploy it!
+            codedeploy.createDeployment(params, function(err, data) {
+                if(err) {
+                    deployEventWithDeployData.CodeDeployResponse = err;
+                    console.log("createDeployment failed: " + err);
+                } else {
+                    deployEventWithDeployData.CodeDeployResponse = "Created new Deployment: " + data.deploymentId;
+                    console.log("createDeployment succeeded: " + data.deploymentId);
+                }
+                
+                // call ourself recursively if we have more work - otherwise call callback
+                index++;
+                if(index < mostRecentEventsWithDeployData.length) {
+                    deployPreviousRevisions(mostRecentEventsWithDeployData, index, callback);
+                } else {
+                    callback(null, mostRecentEventsWithDeployData);
+                }
+            });
+        }
     } else {
         // call ourself recursively if we have more work - otherwise call callback
         index++;
@@ -186,7 +196,7 @@ var findCodeDeployDeploymentInformation = function(mostRecentEvents, index, call
             // lets see if there is a rollback deployment
 
             // "previousRevision":{"revisionType":"S3","s3Location":{"bucket":"codepipeline-artifacts-agrabner-dynatracedevops","key":"SampleDevOpsPipeline/SampleDevO/075Icjq.zip","bundleType":"zip","version":"0tUa9GFNfLmnTA0l8oEejg4ODg.9sDzH","eTag":"9ae34d4b55ab28340ade5875173cb20f"}}
-            console.log("Previous Revision: " + data.previousRevision);
+            // console.log("Previous Revision: " + JSON.stringify(data.deploymentInfo));
             
             event.CodeDeploy = data;
         
