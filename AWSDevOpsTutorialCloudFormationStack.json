@@ -214,10 +214,10 @@
             }
         },
 
-        "DynatraceLambdaRole1": {
+        "DynatraceLambdaRole": {
             "Type": "AWS::IAM::Role",
             "Properties": {
-                "RoleName": "DynatraceLambdaRole1",
+                "RoleName": "DynatraceLambdaRole",
                 "AssumeRolePolicyDocument": {
                     "Version": "2012-10-17",
                     "Statement": [
@@ -242,10 +242,10 @@
                 ]
             }
         },
-        "DynatraceCodeDeployRole1": {
+        "DynatraceCodeDeployRole": {
             "Type": "AWS::IAM::Role",
             "Properties": {
-                "RoleName": "DynatraceCodeDeployRole1",
+                "RoleName": "DynatraceCodeDeployRole",
                 "AssumeRolePolicyDocument": {
                     "Version": "2012-10-17",
                     "Statement": [
@@ -264,10 +264,10 @@
                 ]
             }
         },
-        "DynatraceCodePipelineRole1": {
+        "DynatraceCodePipelineRole": {
             "Type": "AWS::IAM::Role",
             "Properties": {
-                "RoleName": "DynatraceCodePipelineRole1",
+                "RoleName": "DynatraceCodePipelineRole",
                 "AssumeRolePolicyDocument": {
                     "Version": "2012-10-17",
                     "Statement": [
@@ -283,7 +283,7 @@
                 "Path": "/",
                 "Policies": [
                     {
-                        "PolicyName": "DynatraceEC2CodeDeployInstanceProfilePolicy1",
+                        "PolicyName": "DynatraceEC2CodeDeployInstanceProfilePolicy",
                         "PolicyDocument": {
                             "Statement": [
                                 {
@@ -381,22 +381,22 @@
                 ]
             }
         },
-        "DynatraceEC2InstanceProfile1": {
+        "DynatraceEC2InstanceProfile": {
             "Type": "AWS::IAM::InstanceProfile",
             "Properties": {
-                "InstanceProfileName": "DynatraceEC2InstanceProfile1",
+                "InstanceProfileName": "DynatraceEC2InstanceProfile",
                 "Path": "/",
                 "Roles": [
                     {
-                        "Ref": "DynatraceEC2InstanceProfileRole1"
+                        "Ref": "DynatraceEC2InstanceProfileRole"
                     }
                 ]
             }
         },
-        "DynatraceEC2InstanceProfileRole1": {
+        "DynatraceEC2InstanceProfileRole": {
             "Type": "AWS::IAM::Role",
             "Properties": {
-                "RoleName": "DynatraceEC2InstanceProfileRole1",
+                "RoleName": "DynatraceEC2InstanceProfileRole",
                 "AssumeRolePolicyDocument": {
                     "Version": "2012-10-17",
                     "Statement": [
@@ -494,7 +494,7 @@
                     "Ref": "InstanceType"
                 },
                 "IamInstanceProfile": {
-                    "Ref": "DynatraceEC2InstanceProfile1"
+                    "Ref": "DynatraceEC2InstanceProfile"
                 },
                 "KeyName": {
                     "Ref": "KeyName"
@@ -581,7 +581,7 @@
                     "Ref": "InstanceType"
                 },
                 "IamInstanceProfile": {
-                    "Ref": "DynatraceEC2InstanceProfile1"
+                    "Ref": "DynatraceEC2InstanceProfile"
                 },
                 "KeyName": {
                     "Ref": "KeyName"
@@ -662,7 +662,7 @@
                     "Ref": "AnsibleTowerInstanceType"
                 },
                 "IamInstanceProfile": {
-                    "Ref": "DynatraceEC2InstanceProfile1"
+                    "Ref": "DynatraceEC2InstanceProfile"
                 },
                 "KeyName": {
                     "Ref": "KeyName"
@@ -796,7 +796,7 @@
                 "Handler": "handleDynatraceProblemNotification.handler",
                 "Role": {
                     "Fn::GetAtt": [
-                        "DynatraceLambdaRole1",
+                        "DynatraceLambdaRole",
                         "Arn"
                     ]
                 },
@@ -820,7 +820,7 @@
                 "Handler": "getBuildValidationResults.handler",
                 "Role": {
                     "Fn::GetAtt": [
-                        "DynatraceLambdaRole1",
+                        "DynatraceLambdaRole",
                         "Arn"
                     ]
                 },
@@ -844,7 +844,7 @@
                 "Handler": "getDynatraceBuildValidationResults.handler",
                 "Role": {
                     "Fn::GetAtt": [
-                        "DynatraceLambdaRole1",
+                        "DynatraceLambdaRole",
                         "Arn"
                     ]
                 },
@@ -868,7 +868,7 @@
                 "Handler": "pushDynatraceDeploymentEvent.handler",
                 "Role": {
                     "Fn::GetAtt": [
-                        "DynatraceLambdaRole1",
+                        "DynatraceLambdaRole",
                         "Arn"
                     ]
                 },
@@ -892,7 +892,7 @@
                 "Handler": "registerDynatraceBuildValidation.handler",
                 "Role": {
                     "Fn::GetAtt": [
-                        "DynatraceLambdaRole1",
+                        "DynatraceLambdaRole",
                         "Arn"
                     ]
                 },
@@ -916,7 +916,7 @@
                 "Handler": "validateBuildDynatraceWorker.handler",
                 "Role": {
                     "Fn::GetAtt": [
-                        "DynatraceLambdaRole1",
+                        "DynatraceLambdaRole",
                         "Arn"
                     ]
                 },
@@ -955,7 +955,7 @@
                 },
                 "ServiceRoleArn": {
                     "Fn::GetAtt": [
-                        "DynatraceCodeDeployRole1",
+                        "DynatraceCodeDeployRole",
                         "Arn"
                     ]
                 }
@@ -983,7 +983,7 @@
                 },
                 "ServiceRoleArn": {
                     "Fn::GetAtt": [
-                        "DynatraceCodeDeployRole1",
+                        "DynatraceCodeDeployRole",
                         "Arn"
                     ]
                 }
@@ -1011,7 +1011,7 @@
                 },
                 "ServiceRoleArn": {
                     "Fn::GetAtt": [
-                        "DynatraceCodeDeployRole1",
+                        "DynatraceCodeDeployRole",
                         "Arn"
                     ]
                 }
@@ -1039,7 +1039,7 @@
                 },
                 "ServiceRoleArn": {
                     "Fn::GetAtt": [
-                        "DynatraceCodeDeployRole1",
+                        "DynatraceCodeDeployRole",
                         "Arn"
                     ]
                 }
@@ -1065,7 +1065,7 @@
                 "Name": "SampleDevOpsPipeline",
                 "RoleArn": {
                     "Fn::GetAtt": [
-                        "DynatraceCodePipelineRole1",
+                        "DynatraceCodePipelineRole",
                         "Arn"
                     ]
                 },
