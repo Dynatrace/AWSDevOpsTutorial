@@ -146,6 +146,7 @@ var deployPreviousRevisions = function(mostRecentEventsWithDeployData, index, ca
         if(params.revision == null) {
             deployEventWithDeployData.CodeDeployResponse = "COULDNT find previous CodeDeploy Deployment! No rollback possible";
             console.log("createDeployment failed: COULDNT find previous CodeDeploy Deployment!");
+            index++;
             if(index < mostRecentEventsWithDeployData.length) {
                 deployPreviousRevisions(mostRecentEventsWithDeployData, index, callback);
             } else {
