@@ -17,6 +17,10 @@ var monspec = require('utils/monspec');
 // -- CUSTOM_ANNOTATION: annotationType (mandatory), annotationDescription (optional)
 // -- BOTH (optional): source, customProperties
 
+// Global Settings for post retry
+var retryTimespan = 10000
+var retryCount = 6
+
 // handles the request to create a custom event in Dynatrace
 exports.handler = function(event, context, callback) {
     
@@ -229,7 +233,7 @@ var postEventToDynatraceApi = function(postedData, codePipelineJobId, context) {
     }
     
     // lets log our call to Dynatrace    
-    doPostWithRetry(dtEventUrl, postedData, event, codePipelineJobId, context, 5, 5000); 
+    doPostWithRetry(dtEventUrl, postedData, event, codePipelineJobId, context, retryCount, retryTimespan); 
 }
 
 /**

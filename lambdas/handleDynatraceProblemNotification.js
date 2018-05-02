@@ -197,7 +197,7 @@ var findCodeDeployDeploymentInformation = function(mostRecentEvents, index, call
             // lets see if there is a rollback deployment
 
             // "previousRevision":{"revisionType":"S3","s3Location":{"bucket":"codepipeline-artifacts-agrabner-dynatracedevops","key":"SampleDevOpsPipeline/SampleDevO/075Icjq.zip","bundleType":"zip","version":"0tUa9GFNfLmnTA0l8oEejg4ODg.9sDzH","eTag":"9ae34d4b55ab28340ade5875173cb20f"}}
-            // console.log("Previous Revision: " + JSON.stringify(data.deploymentInfo));
+            console.log("getDeployment: " + JSON.stringify(data));
             
             event.CodeDeploy = data;
         
@@ -235,7 +235,9 @@ var getMostRecentDeploymentOnEntity = function(entities, index, timespan, result
         // if we got a list of events only look at the most recent one that came from CodePipeline
         if(statusCode == 200 && data) {
             var events = JSON.parse(data).events;
-            for(var eventIx=events.length-1;eventIx>=0;eventIx--) {
+            // May 2nd 2018: changed iteration as it seems Problem Events REST API is now automatically sorting events descending timeorder. this used to be different. I want to find the "newest" AWS CodePipeline deployment
+            // for(var eventIx=events.length-1;eventIx>=0;eventIx--) {
+            for(var eventIx=0;eventIx<events.length;eventIx++) {
                 var event = events[eventIx];
                 if(event.source == "AWS CodePipeline") {
                     // only push it if the same deploymentId is not already on the list, e.g: if a deployment deployes to multiple instances we only need the deployment once
