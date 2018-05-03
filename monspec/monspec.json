@@ -31,7 +31,7 @@
                 "source" : "Staging",
                 "compare" : "Production",
                 "scalefactorperc" : {
-                    "default": 15,
+                    "default": 30,
                     "com.dynatrace.builtin:service.requestspermin" : 90
                 },
                 "shiftcomparetimeframe" : 0,
