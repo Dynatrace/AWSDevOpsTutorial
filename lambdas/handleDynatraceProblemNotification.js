@@ -37,6 +37,12 @@ exports.handler = (event, context, callback) => {
         callback(null, response);
         return;
     }
+    if(!notificationObject.State) {
+        response.statusCode = 400;
+        response.body = "Missing State";
+        callback(null, response);
+        return;
+    }
     
     // this indicates a Dynatrace Test Message - we just return that everything is OK
     if(event.body.includes("XXXXXXXXXXXXX")) {
@@ -44,6 +50,15 @@ exports.handler = (event, context, callback) => {
         callback(null, response);
         return;
     }
+
+    // we only do a rollback in case a new problem opens up. any other state, e.g: RESOLVED, MERGED doesnt require any action
+    if(!notificationObject.State.startsWith("OPEN")) {
+        response.statusCode = 200;
+        response.body = "Nothing to do as problem status is " + notificationObject.State;
+        callback(null, response);
+        return;
+    }
+
 
     // looks like we have all the data we need - now lets see what we can do with it!    
     dtApiUtils.dtApiInit(function(err,data) {
