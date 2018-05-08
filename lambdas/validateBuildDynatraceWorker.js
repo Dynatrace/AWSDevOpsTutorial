@@ -223,9 +223,6 @@ var processMonspec = function(monspec, fromtime, totime, comparisonname, callbac
                     callback(comparisonname + " is no valid comparison configuration name. couldnt find it in monspec for " + nextMonspecFillTask.configName, null);
                     return;
                 }
-
-                // we need to resolve both source and compare-source timeseries data - then compare these values
-                console.log("Resolve PerfSig for " + perfSigEntry.timeseries + " on " + comparisonConfig.source);
                 
                 // lets first check if we actually have entities resolved for our "source"
                 if(!entities[comparisonConfig.source] || entities[comparisonConfig.source].length == 0) {
@@ -235,71 +232,95 @@ var processMonspec = function(monspec, fromtime, totime, comparisonname, callbac
                 }
                 
                 var shifttimeframe = comparisonConfig.hasOwnProperty("shiftsourcetimeframe") ? comparisonConfig.shiftsourcetimeframe * 1000 : 0;
-                dtApiUtils.getTimeseries(perfSigEntry.timeseries, entities[comparisonConfig.source], fromtime - shifttimeframe, totime - shifttimeframe, "total", perfSigEntry.aggregate, function(err, sourceData) {
-                    if(err) {callback(err,null); return;}
-                    
-                    console.log("Actual values received from SOURCE for " + perfSigEntry.timeseries + ": " + JSON.stringify(sourceData.result.dataPoints) + " entities: " + entities[comparisonConfig.source]);
-                    
-                    // lets check if we received any values - otherwise we stop here
-                    
-                    var sourceResultData = calculateAverageOnDataPoints(sourceData.result.dataPoints);
-                    console.log("TotalSourceResult: " + JSON.stringify(sourceResultData));
-                    if(sourceResultData.sumEntries == 0) {
-                        console.log("Didnt receive any values from SOURCE for " + perfSigEntry.timeseries);
-                        callback("Didnt receive any values from SOURCE for " + perfSigEntry.timeseries);
-                        return;
-                    }
-                    
-                    // get the actual value from the timeserieresapi response!
-                    perfSigEntry.actualSourceValue = sourceResultData.totalAvg;
-                    
-                    // now we have to retrieve it from compare if compare is specified
-                    if(comparisonConfig.compare) {
-                        // lets check if we actually have a comparison source
-                        if(!entities[comparisonConfig.compare] || entities[comparisonConfig.compare].length == 0) {
-                            // we didnt find our compare entities! so we simply set the value to null
-                            perfSigEntry.actualCompareValue = null;
-                            
-                            // now lets check the entry for violations    
+
+                // lets see what perfsignature type we have. we may have timeseries or smartscape check
+                // CHECK FOR TIMESERIES!!
+                if(perfSigEntry.timeseries) {
+                    // we need to resolve both source and compare-source timeseries data - then compare these values
+                    console.log("Resolve PerfSig for " + perfSigEntry.timeseries + " on " + comparisonConfig.source);
+                    dtApiUtils.getTimeseries(perfSigEntry.timeseries, entities[comparisonConfig.source], fromtime - shifttimeframe, totime - shifttimeframe, "total", perfSigEntry.aggregate, function(err, sourceData) {
+                        if(err) {callback(err,null); return;}
+                        
+                        console.log("Actual values received from SOURCE for " + perfSigEntry.timeseries + ": " + JSON.stringify(sourceData.result.dataPoints) + " entities: " + entities[comparisonConfig.source]);
+                        
+                        // lets check if we received any values - otherwise we stop here
+                        
+                        var sourceResultData = calculateAverageOnDataPoints(sourceData.result.dataPoints);
+                        console.log("TotalSourceResult: " + JSON.stringify(sourceResultData));
+                        if(sourceResultData.sumEntries == 0) {
+                            console.log("Didnt receive any values from SOURCE for " + perfSigEntry.timeseries);
+                            callback("Didnt receive any values from SOURCE for " + perfSigEntry.timeseries);
+                            return;
+                        }
+                        
+                        // get the actual value from the timeserieresapi response!
+                        perfSigEntry.actualSourceValue = sourceResultData.totalAvg;
+                        
+                        // now we have to retrieve it from compare if compare is specified
+                        if(comparisonConfig.compare) {
+                            // lets check if we actually have a comparison source
+                            if(!entities[comparisonConfig.compare] || entities[comparisonConfig.compare].length == 0) {
+                                // we didnt find our compare entities! so we simply set the value to null
+                                perfSigEntry.actualCompareValue = null;
+                                
+                                // now lets check the entry for violations    
+                                monspecUtils.checkPerfSigEntryViolation(entitydef, perfSigEntry, comparisonConfig, true);
+                                
+                                // now call the next task
+                                processMonspec(monspec, fromtime, totime, comparisonname, callback);
+                            }
+                            else {
+                                var shifttimeframe = comparisonConfig.hasOwnProperty("shiftcomparetimeframe") ? comparisonConfig.shiftcomparetimeframe * 1000 : 0;
+                                dtApiUtils.getTimeseries(perfSigEntry.timeseries, entities[comparisonConfig.compare], fromtime - shifttimeframe, totime - shifttimeframe, "total", perfSigEntry.aggregate, function(err, compareData) {
+                                    if(err) {callback(err,null); return;}
+                                    
+                                    console.log("Actual values received from COMPARE for " + perfSigEntry.timeseries + ": " + JSON.stringify(compareData.result.dataPoints));
+
+                                    var compareResultData = calculateAverageOnDataPoints(compareData.result.dataPoints);
+                                    console.log("TotalCompareResult: " + JSON.stringify(compareResultData));
+
+                                    if(compareResultData.sumEntries == 0) {
+                                        console.log("Didnt receive any values from COMPARE for " + perfSigEntry.timeseries);
+                                        callback("Didnt receive any values from COMPARE for " + perfSigEntry.timeseries);
+                                        return;
+                                    }
+
+                                    // get the actual value from the timeserieresapi response!
+                                    perfSigEntry.actualCompareValue = compareResultData.totalAvg;
+
+                                    // now lets check the entry for violations    
+                                    monspecUtils.checkPerfSigEntryViolation(entitydef, perfSigEntry, comparisonConfig, true);
+                                
+                                    // now call the next task
+                                    processMonspec(monspec, fromtime, totime, comparisonname, callback);
+                                });
+                            }
+                        } else {
+                            // in this case we assume that monspec contains hard coded static thresholds 
                             monspecUtils.checkPerfSigEntryViolation(entitydef, perfSigEntry, comparisonConfig, true);
-                            
+                        
                             // now call the next task
                             processMonspec(monspec, fromtime, totime, comparisonname, callback);
                         }
-                        else {
-                            var shifttimeframe = comparisonConfig.hasOwnProperty("shiftcomparetimeframe") ? comparisonConfig.shiftcomparetimeframe * 1000 : 0;
-                            dtApiUtils.getTimeseries(perfSigEntry.timeseries, entities[comparisonConfig.compare], fromtime - shifttimeframe, totime - shifttimeframe, "total", perfSigEntry.aggregate, function(err, compareData) {
-                                if(err) {callback(err,null); return;}
-                                
-                                console.log("Actual values received from COMPARE for " + perfSigEntry.timeseries + ": " + JSON.stringify(compareData.result.dataPoints));
-
-                                var compareResultData = calculateAverageOnDataPoints(compareData.result.dataPoints);
-                                console.log("TotalCompareResult: " + JSON.stringify(compareResultData));
-
-                                if(compareResultData.sumEntries == 0) {
-                                    console.log("Didnt receive any values from COMPARE for " + perfSigEntry.timeseries);
-                                    callback("Didnt receive any values from COMPARE for " + perfSigEntry.timeseries);
-                                    return;
-                                }
-
-                                // get the actual value from the timeserieresapi response!
-                                perfSigEntry.actualCompareValue = compareResultData.totalAvg;
-
-                                // now lets check the entry for violations    
-                                monspecUtils.checkPerfSigEntryViolation(entitydef, perfSigEntry, comparisonConfig, true);
-                            
-                                // now call the next task
-                                processMonspec(monspec, fromtime, totime, comparisonname, callback);
-                            });
-                        }
-                    } else {
-                        // in this case we assume that monspec contains hard coded static thresholds 
-                        monspecUtils.checkPerfSigEntryViolation(entitydef, perfSigEntry, comparisonConfig, true);
+                    });
+                } else // if(perfSigEntry.timeseries)
+                if(perfSigEntry.smartscape) {
+                    console.log("Resolve PerfSig for " + perfSigEntry.smartscape + " on " + comparisonConfig.source);
                     
-                        // now call the next task
-                        processMonspec(monspec, fromtime, totime, comparisonname, callback);
-                    }
-                });
+                    // TODO - implement Smartscape queries
+                    // right now we simply 
+
+                    perfSigEntry.actualSourceValue = 1;
+                    perfSigEntry.actualCompareValue = 1;
+
+                    // check entry violation 
+                    monspecUtils.checkPerfSigEntryViolation(entitydef, perfSigEntry, comparisonConfig, true);
+                
+                    // now call the next task
+                    processMonspec(monspec, fromtime, totime, comparisonname, callback);
+                } // if(perfSigEntry.smartscape)
+
+
                 break;
             case monspecUtils.FILLTASK_RESOLVE_SERVICE_PERFSIG:
                 // TODO - for later - right now we just put the desired value in the actual value

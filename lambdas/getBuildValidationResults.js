@@ -189,14 +189,18 @@ var getDataFromDynamoDB = function(pipelineName, comparisonName, timespan, callb
                     var actualCompare = perfSigEntry.actualCompareValue ? perfSigEntry.actualCompareValue : 0;
                     var actualLimit = perfSigEntry.actualUpperLimit ? perfSigEntry.actualUpperLimit : (perfSigEntry.actualLowerLimit ? perfSigEntry.actualLowerLimit : 0);
                     var status = perfSigEntry.status ? (perfSigEntry.status === "violation" ? 1 : 0) : 0;
+
+                    // we have different data sources - such as timeseries or smartscape
                     var timeseries = perfSigEntry.timeseries;
+                    var smartscape = perfSigEntry.smartscape;
+                    var metricName = timeseries ? timeseries : smartscape;
                     
                     // now lets tidy up the numbers to a max of 2 digits
                     actualSource = parseFloat(actualSource.toFixed(2));
                     actualCompare = parseFloat(actualCompare.toFixed(2));
                     actualLimit = parseFloat(actualLimit.toFixed(2));
                     
-                    addResultEntry(responseObject, configurations[monspecConfigIx], aggregate, validate, timeseries, timestamp, actualSource, comparisonConfig.source, actualCompare, comparisonConfig.compare, actualLimit, globalThresholdColumn, status, globalViolationColumn);
+                    addResultEntry(responseObject, configurations[monspecConfigIx], aggregate, validate, metricName, timestamp, actualSource, comparisonConfig.source, actualCompare, comparisonConfig.compare, actualLimit, globalThresholdColumn, status, globalViolationColumn);
                 }
             }    
         } // for

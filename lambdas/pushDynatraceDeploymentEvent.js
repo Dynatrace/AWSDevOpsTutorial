@@ -18,8 +18,8 @@ var monspec = require('utils/monspec');
 // -- BOTH (optional): source, customProperties
 
 // Global Settings for post retry
-var retryTimespan = 10000
-var retryCount = 6
+var retryTimespan = 15000
+var retryCount = 8
 
 // handles the request to create a custom event in Dynatrace
 exports.handler = function(event, context, callback) {

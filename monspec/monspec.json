@@ -97,6 +97,16 @@
                 "timeseries" : "com.dynatrace.builtin:service.requestspermin",
                 "aggregate" : "count",
                 "validate" : "lower"
+            },
+            {
+                "smartscape" : "toRelationships:calls",
+                "aggregate" : "count",
+                "validate" : "lower"
+            },
+            {
+                "smartscape" : "fromRelationships:runsOn",
+                "aggregate" : "count",
+                "validate" : "lower"
             }
         ],
         "_comment_perfsignature" : "this is the list of key metrics that make up your performance signature. we will then compare these metrics against the compare enviornment or a static threshold",
