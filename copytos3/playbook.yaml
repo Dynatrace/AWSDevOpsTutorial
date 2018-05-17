@@ -11,6 +11,7 @@
     payload:
       PID: "{{pid}}"
       ImpactedEntities: "{{impactedEntities}}"
+      State: "{{state}}"
 
   tasks:
     - name: push comment to dynatrace
