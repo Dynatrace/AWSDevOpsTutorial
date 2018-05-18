@@ -64,8 +64,11 @@ exports.handler = (event, context, callback) => {
     dtApiUtils.dtApiInit(function(err,data) {
         
         var impactedEntities = [];
+        console.log("notificationObject.ImpactedEntities: " + notificationObject.ImpactedEntities);
         for(var entityIx=0;entityIx<notificationObject.ImpactedEntities.length;entityIx++) {
-            impactedEntities.push(notificationObject.ImpactedEntities[entityIx].entity);
+            var myEntity = JSON.parse(notificationObject.ImpactedEntities[entityIx]);
+            console.log("notificationObject.ImpactedEntities[entityIx]: "+ myEntity.entity);
+            impactedEntities.push(myEntity.entity);
         }
         
         console.log("Impacted Entities: " + impactedEntities);

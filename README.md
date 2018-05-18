@@ -33,8 +33,10 @@ As we are going to use AWS CodeDeploy, AWS CodePipeline, AWS Lambda, DynamoDB, A
 1.1. To learn more about Key Pairs and how to connect to EC2 Instances for troubleshooting read [Connect to your Linux Instance](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/AccessingInstances.html)
 2. Create a S3 Bucket with the naming scheme: <yourname>-dynatracedevops and enable versioning. See following screenshots for reference
 ![](./images/preparation_creates3bucket.png)
-3. Copy the content from the folder "copytos3" to your newly created S3 bucket. This includes the application package, tests, monspec, Ansible Tower license, Ansible playbook as well as all Lambda functions
+3. Copy the content from the folder "copytos3" to your newly created S3 bucket. This includes the application package, tests, monspec as well as all Lambda functions.
+If you want to use Ansible for Auto-Remediation, make sure to also copy the Ansible Tower license and Ansible playbook. The Ansible License file you have to be provide has to be named ``ansible-license.txt``.
 ![](./images/preparation_copytos3.png)
+4. for ANSIBLE TOWER auto-remediation only: make both the ``ansible-license.txt`` as well as the ``playbook.yaml`` public in order for the script to download it to the corresponding EC2 instances during installation. Therefore, select both files and click on "More -> Make public" and submit the dialog.
 
 **Dynatrace**
 

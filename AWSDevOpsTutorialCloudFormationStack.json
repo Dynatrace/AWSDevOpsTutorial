@@ -1655,25 +1655,6 @@
             },
             "Description": "The Public DNS of your Ansible Tower"
         }, 
-        "AnsibleTowerAPIUrl": {
-            "Condition": "CreateAnsibleInstance",
-            "Value": {
-                "Fn::Join":[
-                    "",
-                    [
-                        "https://",
-                        { 
-                            "Fn::GetAtt": [
-                                "AnsibleTowerInstance",
-                                "PublicDnsName"
-                            ]
-                        },
-                        "/api/v2/job_templates/7/launch/"
-                    ]
-                ]
-            },
-            "Description": "Endpoint for calling predefined playbook in Ansible Tower"
-        },
         "AnsibleTowerJobTemplateUrl": {
             "Condition": "CreateAnsibleInstance",
             "Value": {
