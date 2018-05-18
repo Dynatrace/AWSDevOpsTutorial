@@ -64,7 +64,7 @@
             "ParameterGroups": [
                 {
                 "Label": { "default": "Dynatrace"},
-                "Parameters": [ "DynatraceTenantURL", "DynatraceAPIToken", "DynatraceAPIToken", "DynatraceOneAgentURL" ]
+                "Parameters": [ "DynatraceTenantURL", "DynatraceAPIToken","DynatraceOneAgentURL" ]
                 },
                 {
                     "Label": {"default": "Deployment"},
@@ -753,12 +753,12 @@
                                     "Ref": "YourS3BucketName"
                                 },
                                 "/playbook.yaml \n",
-                                "sed -i -e 's/DT_TENANT_URL/", {
+                                "sed -i -e 's,DT_TENANT_URL,", {
                                     "Ref": "DynatraceTenantURL"
-                                }, "/g' /var/lib/awx/projects/unbreakable/playbook.yaml \n",
-                                "sed -i -e 's/DT_API_TOKEN/", {
+                                }, ",g' /var/lib/awx/projects/unbreakable/playbook.yaml \n",
+                                "sed -i -e 's,DT_API_TOKEN,", {
                                     "Ref": "DynatraceAPIToken"
-                                }, "/g' /var/lib/awx/projects/unbreakable/playbook.yaml \n",
+                                }, ",g' /var/lib/awx/projects/unbreakable/playbook.yaml \n",
                                 "tower-cli config username admin\n",
                                 "tower-cli config password dynatrace\n",
                                 "tower-cli project create --name Unbreakable --scm-type manual --organization Default --local-path unbreakable \n",
