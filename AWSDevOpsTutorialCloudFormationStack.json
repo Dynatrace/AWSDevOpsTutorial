@@ -2,10 +2,6 @@
     "AWSTemplateFormatVersion": "2010-09-09",
     "Description": "Dynatrace AWS DevOps Workshop: For more details please check out the full tutorial on https://github.com/Dynatrace/AWSDevOpsTutorial",
     "Parameters": {
-        "DynatraceTenant": {
-            "Description": "Your Dynatrace Tenant ID, e.g: abc12345 in case you run Dynatrace SaaS",
-            "Type": "String"
-        },
         "DynatraceTenantURL": {
             "Description": "Your full Dynatrace Tenant URL. For SaaS it is e.g: https://<YOURTENANTID>.live.dynatrace.com. For Managed something like https://yourserver/e/abcdefgh-1234-5678-abcd-55a7265f572f",
             "Type": "String",
@@ -76,7 +72,7 @@
                 },
                 {
                     "Label": {"default": "Ansible Tower"},
-                    "Parameters": ["UseAnsibleTower", "AnsibleTowerInstanceType", "DynatraceTenant"]
+                    "Parameters": ["UseAnsibleTower", "AnsibleTowerInstanceType"]
                 }
             ],
             "ParameterLabels": {
@@ -724,8 +720,8 @@
                                     "Ref": "YourS3BucketName"
                                 },
                                 "/playbook.yaml \n",
-                                "sed -i -e 's/DT_TENANT_ID/", {
-                                    "Ref": "DynatraceTenant"
+                                "sed -i -e 's/DT_TENANT_URL/", {
+                                    "Ref": "DynatraceTenantURL"
                                 }, "/g' /var/lib/awx/projects/unbreakable/playbook.yaml \n",
                                 "sed -i -e 's/DT_API_TOKEN/", {
                                     "Ref": "DynatraceAPIToken"
