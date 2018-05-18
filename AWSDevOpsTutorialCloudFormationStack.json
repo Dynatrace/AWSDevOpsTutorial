@@ -97,6 +97,39 @@
             },
             "us-west-2": {
                 "AMI": "ami-f2d3638a"
+            },
+            "ca-central-1" : {
+                "AMI" : "ami-a954d1cd"
+            },
+            "eu-central-1" : {
+                "AMI": "ami-5652ce39"
+            },
+            "eu-west-1" : {
+                "AMI" : "ami-d834aba1"
+            },
+            "eu-west-2" : {
+                "AMI" : "ami-403e2524"
+            },
+            "eu-west-3" : {
+                "AMI" : "ami-8ee056f3"
+            },
+            "ap-south-1" : {
+                "AMI" : "ami-531a4c3c"
+            },
+            "ap-northeast-2" : {
+                "AMI" : "ami-863090e8"
+            },
+            "ap-southeast-1" : {
+                "AMI" : "ami-68097514"
+            },
+            "ap-southeast-2" : {
+                "AMI" : "ami-942dd1f6"
+            },
+            "ap-northeast-1" : {
+                "AMI" : "ami-ceafcba8"
+            },
+            "sa-east-1" : {
+                "AMI" : "ami-84175ae8"
             }
         },
         "AnsibleRegionMap": {
