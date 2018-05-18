@@ -2,12 +2,13 @@
 - name: rollback to previous version
   hosts: localhost
   vars:
-    tenantid: DT_TENANT_ID
+    tenanturl: DT_TENANT_URL
     apitoken: DT_API_TOKEN
     now: "{{ ansible_date_time.epoch|int * 1000}}"
     past: "{{ now|int - 86400000 }}" # 1h = 3600000   24h = 86400000
     commentuser: "Ansible Playbook"
-    dtcommentapiurl: "https://{{tenantid}}.live.dynatrace.com/api/v1/problem/details/{{pid}}/comments?Api-Token={{apitoken}}"
+    dtcommentapiurl: "{{tenanturl}}/api/v1/problem/details/{{pid}}/comments?Api-Token={{apitoken}}"
+    dtdeploymentapiurl: "{{tenanturl}}/api/v1/events/?entityId={{(item|from_json).entity}}&eventType=CUSTOM_DEPLOYMENT&from={{past}}&to={{now}}&Api-Token={{apitoken}}"
     payload:
       PID: "{{pid}}"
       ImpactedEntities: "{{impactedEntities}}"
@@ -23,7 +24,7 @@
 
     - name: fetch custom deployment events
       uri:
-        url: https://{{tenantid}}.live.dynatrace.com/api/v1/events/?entityId={{(item|from_json).entity}}&eventType=CUSTOM_DEPLOYMENT&from={{past}}&to={{now}}&Api-Token={{apitoken}}
+        url: "{{dtdeploymentapiurl}}"
         return_content: yes
       with_items: "{{ impactedEntities }}"
       register: customproperties
