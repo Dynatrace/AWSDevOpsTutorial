@@ -1,7 +1,7 @@
 var dtApiUtils = require('utils/dtapiutils');
 var AWS = require('aws-sdk');
 
-var defaultTimespan = 180*60*1000; // =60Min*60Sec*1000 == Milliseconds
+var defaultTimespan = 60*60*1000; // =60Min*60Sec*1000 == Milliseconds
 
 /**
  * Handles Dynatrace Problem Notifications
@@ -23,6 +23,9 @@ exports.handler = (event, context, callback) => {
         return;
     }
     
+    console.log("POSTED BODY");
+    console.log(event.body);
+
     var notificationObject = JSON.parse(event.body);
     // Lets make sure we have the mandatory fields
     if(!notificationObject.PID) {
@@ -66,7 +69,8 @@ exports.handler = (event, context, callback) => {
         var impactedEntities = [];
         console.log("notificationObject.ImpactedEntities: " + notificationObject.ImpactedEntities);
         for(var entityIx=0;entityIx<notificationObject.ImpactedEntities.length;entityIx++) {
-            var myEntity = JSON.parse(notificationObject.ImpactedEntities[entityIx]);
+            // var myEntity = JSON.parse(notificationObject.ImpactedEntities[entityIx]);
+            var myEntity = notificationObject.ImpactedEntities[entityIx];
             console.log("notificationObject.ImpactedEntities[entityIx]: "+ myEntity.entity);
             impactedEntities.push(myEntity.entity);
         }
