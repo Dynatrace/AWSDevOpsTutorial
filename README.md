@@ -1,3 +1,6 @@
+**ATTENTION: Update 2020: Have a look at Keptn.sh for the next generation of the Unbreakable Pipeline**
+Feel free to move on with this tutorial for AWS but be aware that we have taken these concepts developed back in 2018 and brought them over to our Open Source project [Keptn](https://www.keptn.sh). Keptn provides both automated delivery and operations. It integrates well with any tools due to its event-driven delivery choreographay. It also implements SLI/SLO-based Quality Gates and allows for automatic roll backs of bad deployments. If you want to learn more about Keptn make sure to check out the website and [Keptn Tutorials](https://tutorials.keptn.sh)
+
 # AWSDevOpsTutorial
 Unbreakable DevOps Pipeline Tutorial with AWS CodeDeploy, AWS CodePipeline, AWS Lambda, EC2 and Dynatrace.
 
