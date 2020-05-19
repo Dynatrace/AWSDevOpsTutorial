@@ -48,7 +48,7 @@ We need a couple of things to launch the CloudFormation Template
 2. Your *Dynatrace Tenant URL*: For SaaS that would be something like `http://<yourtenant>.live.dynatrace.com`. For Managed it would be http://`<yourserver>/e/<your-env-id>`
 3. Your *Dynatrace OneAgent for Linux Download URL*: Go to Deploy Dynatrace -> Start Installation -> Linux and copy the URL within the quotes as shown below:
 ![](./images/preparation_dynatraceoneagenturl.png)
-4. A *Dynatrace API Token*: Go to Settings -> Integration -> Dynatrace API and create a new Token
+4. A *Dynatrace API Token*: Go to Settings -> Integration -> Dynatrace API and create a new Token with default settings (screenshot below may differ to what you see. Just go with defaults)
 ![](./images/preparation_dynatraceapitoken.png)
 
 **(optional) Setup Dynatrace AWS CloudWatch Monitoring**
