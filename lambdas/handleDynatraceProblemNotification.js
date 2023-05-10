@@ -218,7 +218,6 @@ var findCodeDeployDeploymentInformation = function(mostRecentEvents, index, call
         codedeploy.getDeployment({deploymentId : event.customProperties["CodeDeploy.DeploymentId"]}, function(err, data) {
             // lets see if there is a rollback deployment
 
-            // "previousRevision":{"revisionType":"S3","s3Location":{"bucket":"codepipeline-artifacts-agrabner-dynatracedevops","key":"SampleDevOpsPipeline/SampleDevO/075Icjq.zip","bundleType":"zip","version":"0tUa9GFNfLmnTA0l8oEejg4ODg.9sDzH","eTag":"9ae34d4b55ab28340ade5875173cb20f"}}
             console.log("getDeployment: " + JSON.stringify(data));
             
             event.CodeDeploy = data;
